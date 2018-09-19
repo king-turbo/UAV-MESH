@@ -2,8 +2,8 @@
 sudo rm /etc/network/interfaces
 sudo rm /etc/wpa_supplicant/wpa_supplicant.conf
 
-touch rm /etc/network/interfaces
-touch rm /etc/wpa_supplicant/wpa_supplicant.conf
+touch  /etc/network/interfaces
+touch  /etc/wpa_supplicant/wpa_supplicant.conf
 
 #wpa succ
 echo 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev' >> /etc/wpa_supplicant/wpa_supplicant.conf
