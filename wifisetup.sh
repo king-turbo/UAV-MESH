@@ -31,6 +31,6 @@ echo 'iface lo inet loopback' >> /etc/network/interfaces
 
 
 
-echo 'allow-hotplug wlan1' >> /etc/network/interfaces
+echo 'allow-hotplug wlan0' >> /etc/network/interfaces
 echo 'iface wlan1 inet manual' >> /etc/network/interfaces
 echo 'wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf' >> /etc/network/interfaces
