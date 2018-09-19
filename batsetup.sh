@@ -9,7 +9,7 @@ echo "starting wifi setup"
 sudo killall wpa_supplicant
 ./wifisetup.sh
 sudo wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0 &
-sudo ifconfig wlan1 up &
+sudo ifconfig wlan0 up &
 sleep 20s
 ./wifidefault.sh
 
