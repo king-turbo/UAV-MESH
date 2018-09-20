@@ -4,7 +4,6 @@ sudo rm /etc/wpa_supplicant/wpa_supplicant.conf
 
 touch  /etc/network/interfaces
 touch  /etc/wpa_supplicant/wpa_supplicant.conf
-HASHWORD=hash:2d981c4930b658910d75fdc50c2234db #ignoreline
 #wpa succ
 echo 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev' >> /etc/wpa_supplicant/wpa_supplicant.conf
 echo 'update_config=1' >> /etc/wpa_supplicant/wpa_supplicant.conf

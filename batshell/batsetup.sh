@@ -6,8 +6,6 @@
 
 echo "starting wifi setup"
 
-IP_ADDRESS=172.27.0.1/16 #ignoreline
-
 sudo killall wpa_supplicant
 ./wifisetup.sh
 sudo wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0 &
