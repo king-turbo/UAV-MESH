@@ -9,7 +9,7 @@ def neat_data(data):
         json.dump(data,outfile, indent=4, sort_keys=True)
     print("dumppppppppppppppppp")
 
-IP_ADDRESS = "172.27.0.1"
+IP_ADDRESS = "172.27.0.2"
 PORT = 5005
 LOCATION = (IP_ADDRESS,PORT)
 

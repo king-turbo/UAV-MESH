@@ -4,7 +4,7 @@ import json
 
 file = open("sample.json").read()
 file = json.loads(file)
-IP_ADDRESS = "172.27.0.1"
+IP_ADDRESS = "172.27.0.2"
 PORT = 5005
 LOCATION = (IP_ADDRESS,PORT)
 
