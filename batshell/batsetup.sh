@@ -6,6 +6,8 @@
 
 echo "starting wifi setup"
 
+IP_ADDRESS=172.27.0.1/16 #ignoreline
+
 sudo killall wpa_supplicant
 ./wifisetup.sh
 sudo wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0 &
@@ -34,5 +36,5 @@ sudo batctl if add wlan1 &
 sleep 1s
 sudo ifconfig bat0 up &
 sleep 5s
-sudo ifconfig bat0 172.27.0.1/16 &
+sudo ifconfig bat0 $IP_ADDRESS &
 sudo ifconfig wlan1 up
