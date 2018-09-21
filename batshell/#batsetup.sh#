@@ -7,9 +7,11 @@
 
 echo "starting wifi setup"
 USERNAME=$1
-PASSWORD=$2
+PASS=$2
+echo $1
+echo $2
 sudo killall wpa_supplicant
-./wifisetup.sh $USERNAME $PASSWORD
+./wifisetup.sh USERNAME PASS
 sudo wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0 &
 sudo ifconfig wlan0 up &
 sleep 20s
@@ -22,6 +24,9 @@ sudo modprobe batman-adv
 
 # disable wlan0
 
+
+
+echo "wsup again"
 sudo ifconfig wlan1 down &
 sudo ifconfig wlan1 mtu 1532 &
 sleep 1s

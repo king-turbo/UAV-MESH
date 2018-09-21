@@ -9,13 +9,13 @@ def neat_data(data):
         json.dump(data,outfile, indent=4, sort_keys=True)
     print("dumppppppppppppppppp")
 
-IP_ADDRESS = "172.27.0.1"
+IP_ADDRESS = "172.27.0.2"
 PORT = 5005
 LOCATION = (IP_ADDRESS,PORT)
 
-while 1:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(LOCATION)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(LOCATION)
+while True:
     sock.listen(1)
     s, addr = sock.accept()
     while True:
