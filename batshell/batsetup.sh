@@ -8,6 +8,7 @@
 echo "starting wifi setup"
 USERNAME=$1
 PASSWORD=$2
+IP_ADDRESS=$3
 sudo killall wpa_supplicant
 ./wifisetup.sh $USERNAME $PASSWORD
 sudo wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0 &
