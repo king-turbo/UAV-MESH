@@ -10,7 +10,6 @@ LOCATION = (IP_ADDRESS,PORT)
 
 print("TARGET IP: ", IP_ADDRESS)
 print("TARGET PORT: ", PORT)
-"""  print(MESSAGE, MESSAGE HERE IS THE MESSAGE: ", MESSAGE.decode('utf-8'))""" 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(LOCATION)
 sock.sendall(json.dumps(file).encode("utf-8"))
