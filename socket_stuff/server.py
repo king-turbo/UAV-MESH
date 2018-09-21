@@ -13,9 +13,9 @@ IP_ADDRESS = "172.27.0.2"
 PORT = 5005
 LOCATION = (IP_ADDRESS,PORT)
 
-while 1:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(LOCATION)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(LOCATION)
+while True:
     sock.listen(1)
     s, addr = sock.accept()
     while True:

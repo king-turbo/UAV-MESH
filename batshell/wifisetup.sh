@@ -1,7 +1,9 @@
 #!/bin/bash
 sudo rm /etc/network/interfaces
 sudo rm /etc/wpa_supplicant/wpa_supplicant.conf
-
+USERNAME=$1
+PASSWORD=$2
+HASHWORD=$(echo -n $PASSWORD | iconv -t utf16le | openssl md4 -binary | xxd -p)
 touch  /etc/network/interfaces
 touch  /etc/wpa_supplicant/wpa_supplicant.conf
 #wpa succ
@@ -14,8 +16,8 @@ echo 'network={
      proto=RSN
      key_mgmt=WPA-EAP
      group=CCMP TKIP
-     identity="mtw0050" 
-     password=$HASHWORD
+     identity="'"$USERNAME"'"
+     password=hash:'"$HASHWORD"'
      phase1="peaplabel=0"
      phase2="auth=MSCHAPV2"
      }' >> /etc/wpa_supplicant/wpa_supplicant.conf
