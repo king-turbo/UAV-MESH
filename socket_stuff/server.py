@@ -1,4 +1,3 @@
-
 import socket
 import json
 
@@ -9,7 +8,7 @@ class VehicleObj:
         self.name = name
         self.ip = ip
         self.vehicleType = vehicleType
-        self.mode = "default"
+        self.mode = "default"''
         self.connObj = connObj
 
 class Server:
@@ -72,3 +71,5 @@ if __name__=="__main__":
     queenB = Server(HOST, PORT)
 
     queenB.listen()
+
+
