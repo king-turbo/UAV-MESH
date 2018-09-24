@@ -9,7 +9,7 @@ class VehicleObj:
         self.name = name
         self.ip = ip
         self.vehicleType = vehicleType
-        self.mode = "default"''
+        self.mode = "default"
         self.connObj = connObj
 
 class Server:
