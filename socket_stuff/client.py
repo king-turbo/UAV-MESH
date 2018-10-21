@@ -48,6 +48,7 @@ class Client():
         self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
 
         data = self.sock.recv(1024)
+        print(data)
         _data = json.loads(data.decode("utf-8"))
         self.updateRate = _data["freq"]
         if _data["mode"] == "default":
@@ -67,7 +68,6 @@ class Client():
                     print("business as usual")
                     toc=  time.time() - tic
                     time.sleep((1 / self.updateRate)  - toc)
-
 
 
 if __name__=="__main__":

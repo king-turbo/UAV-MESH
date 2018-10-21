@@ -5,12 +5,12 @@ import select
 
 class VehicleObj:
 
-    def __init__(self, name, ip, vehicleType, connObj):
+    def __init__(self, name, ip, vehicleType):
         self.name = name
         self.ip = ip
         self.vehicleType = vehicleType
         self.mode = "default"
-        self.connObj = connObj
+
 
 class Server:
 
@@ -33,13 +33,23 @@ class Server:
                 #dict with ip addresses and the name of the agent
                 self.ipDict[addr[0]] = _data["name"]
                 #agent dict with names as keys and a vehicle class as value
-                self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"]))
-                conn.sendall(json.dumps(self.initMsgFrmSrv).encode("utf-8"))
+                if _data["name"] not in self.agents:
+                    self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"]))
+                elif self.agents[_data["name"].ip != addr[0]]:
+                    print("need a unique name")  #TODO: make a fancy exception thing
+                    conn.close()
+                    return None
+
+                a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
+                conn.sendall(a)
+                print("what")
                 self.clientHandler(conn, addr)
         except:
             conn.close()
 
+
     def clientHandler(self, conn, addr):
+        print("hey")
         while True:
             r, _, _ = select.select([conn], [], [], 2)
             if r:
