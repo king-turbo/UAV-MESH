@@ -56,21 +56,17 @@ class Client():
     def sendData(self):
 
         while True:
-
             tic = time.time()
             self.sock.sendall(json.dumps(self.uav.sendDict).encode("utf-8"))
             r, _, _ = select.select([self.sock],[],[], .05)
             if r:
                 data = self.sock.recv(1024)
+                print(data)
                 _data = json.loads(data.decode("utf-8"))
                 if _data == '0':
                     print("business as usual")
-            toc=  time.time() - tic
-            print(toc)
-            time.sleep(1/self.updateRate - toc)
-
-
-
+                    toc=  time.time() - tic
+                    time.sleep((1 / self.updateRate)  - toc)
 
 
 

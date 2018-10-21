@@ -1,6 +1,7 @@
 import socket
 import json
-
+import _thread
+import select
 
 class VehicleObj:
 
@@ -8,7 +9,7 @@ class VehicleObj:
         self.name = name
         self.ip = ip
         self.vehicleType = vehicleType
-        self.mode = "default"''
+        self.mode = "default"
         self.connObj = connObj
 
 class Server:
@@ -20,41 +21,56 @@ class Server:
         self.ipDict = {}
         self.initMsgFrmSrv = {"mode" : "default", "freq" : 5}
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((self.HOST, self.PORT))
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.listen(5)
+        self.sock.bind((self.HOST, self.PORT))
 
     def initializeNode(self, conn, addr):
+        try:
+            data = conn.recv(1024)
+            if data:
+                _data = json.loads(data.decode("utf-8"))
+                print(_data)
+                #dict with ip addresses and the name of the agent
+                self.ipDict[addr[0]] = _data["name"]
+                #agent dict with names as keys and a vehicle class as value
+                self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"]))
+                conn.sendall(json.dumps(self.initMsgFrmSrv).encode("utf-8"))
+                self.clientHandler(conn, addr)
+        except:
+            conn.close()
 
-        data = conn.recv(1024)
-        if data:
-            _data = json.loads(data.decode("utf-8"))
-            #dict with ip addresses and the name of the agent
-            self.ipDict[addr[0]] = _data["name"]
-            #agent dict with names as keys and a vehicle class as value
-            self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"], conn))
-            conn.sendall(json.dumps(self.initMsgFrmSrv).encode("utf-8"))
-
-    def parseData(self, conn, addr):
-
-        data = conn.recv(1024)
-        if data:
-            _data = json.loads(data.decode("utf-8"))
-            if "close connection" in _data:
-                del self.ipDict[addr[0]]
+    def clientHandler(self, conn, addr):
+        while True:
+            r, _, _ = select.select([conn], [], [], 2)
+            if r:
+                data = conn.recv(1024)
+                if data:
+                    _data = json.loads(data.decode("utf-8"))
+                    if "close connection" in _data:
+                        del self.ipDict[addr[0]]
+                        conn.close()
+                        break
+                    else:
+                        # pass connection and vehicle object to the reply function
+                        self.replyMsg(conn, self.agents[self.ipDict[addr[0]]])
+                        pass
             else:
-                #pass connection and vehicle object to the reply function
-                self.replyMsg(conn, self.agents[self.ipDict[addr[0]]])
-                pass
+                print("removing connection")
+                conn.close()
+                del self.ipDict[addr[0]]
+                break
 
 
     def listen(self):
-        self.conn, addr = self.sock.accept()  # this may need to get moved later when we switch to threading
+        self.sock.listen(5)
         while True:
-            if addr[0] in self.ipDict:
-                self.parseData(self.conn, addr)
-            else:
-                self.initializeNode(self.conn, addr)
+            conn, addr = self.sock.accept()  # this may need to get moved later when we switch to threadingls
+            # conn.settimeout(3)
+            if addr[0] not in self.ipDict:
+                _thread.start_new_thread(self.initializeNode, (conn, addr))
+
+
+
 
     def replyMsg(self, conn, agent):
         #send back a 0 if there is nothing to change
