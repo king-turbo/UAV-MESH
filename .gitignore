@@ -1,6 +1,9 @@
 
 *~
 runsetup.sh
-
+__pycache__
+.idea
+*.pyc
+*.pyo
 
 
