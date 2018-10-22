@@ -60,3 +60,7 @@ class UI:
                 pass
 
             self.userInput = ''
+
+    def dummyfunction(self):
+        whatisthisnotworking = 1
+        
