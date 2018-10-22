@@ -47,7 +47,7 @@ class UI:
                         print(pipeData[input[0]].upateRate)
 
                 if input[0] == 'set' and len(input) == 4:
-                                        #name   #parameter  #newvalue
+                            #name   #parameter  #newvalue
                     inst = [input[1],input[2],input[3]]
                     self.outPipe.send(inst)
 
