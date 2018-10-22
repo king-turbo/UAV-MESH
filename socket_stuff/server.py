@@ -32,24 +32,31 @@ class Server:
         self.sock.bind((self.HOST, self.PORT))
 
 
-
     def initializeNode(self, conn, addr):
         try:
             data = conn.recv(1024)
             if data:
                 _data = json.loads(data.decode("utf-8"))
                 #dict with ip addresses and the name of the agent
-                self.ipDict[addr[0]] = _data["name"]
+
                 #agent dict with names as keys and a vehicle class as value
+
                 if _data["name"] not in self.agents:
+                    print("new agent")
+                    self.ipDict[addr[0]] = _data["name"]
                     self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"]))
-                elif self.agents[_data["name"].ip != addr[0]]:
+
+                elif self.agents[_data["name"]].ip != addr[0]:
                     print("need a unique name")  #TODO: make a fancy exception thing
                     conn.close()
                     return None
+                elif self.agents[_data["name"]].ip == addr[0]:
+                    self.ipDict[addr[0]] = _data["name"]
 
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
                 conn.sendall(a)
+
+
                 self.clientHandler(conn, addr)
         except:
             conn.close()
@@ -58,49 +65,41 @@ class Server:
     def clientHandler(self, conn, addr):
         oPipe = False
         while True:
+
             #THIS HANDLES INCOMING DATA FROM PRINCESS
 
             r, _, _ = select.select([conn], [], [], 2)
             if r:
                 data = conn.recv(1024)
                 if data:
-
                     _data = json.loads(data.decode("utf-8"))
 
+            ##THIS SECTION WILL GET THE DATA FROM THE PRINCESSES
 
-                    ##THIS SECTION WILL GET THE DATA FROM THE PRINCESSES
 
                     self.agents[self.ipDict[addr[0]]].GPS = _data["GPS"]
                     self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
                     self.agents[self.ipDict[addr[0]]].mode = _data["mode"]
 
+
+            ##THIS SECTION WILL TELL THE PRINCESSES WHAT TO DO
+
                     if "close connection" not in _data:
-                        # THIS SECTION HANDLES TELLING THE PRINCESSES WHAT TO DO
-
-
                         if self.outputPipe.poll():
                             oPipe = self.outputPipe.recv()
-                            print("asdf")
-
-                            print(oPipe)
-
                         if oPipe:
-
                             if oPipe[0] == self.ipDict[addr[0]]:
                                 self.replyMsg(conn, oPipe[1:])
-
                             else:
                                 self.replyMsg(conn, [0])
                         else:
                             self.replyMsg(conn,[0])
-
 
                     else:
                         print("shits getting del")
                         del self.ipDict[addr[0]]
                         conn.close()
                         break
-
 
             else:
                 print("removing connection")
@@ -114,10 +113,6 @@ class Server:
     def replyMsg(self, conn, msg):
         conn.sendall(json.dumps(msg).encode("utf-8"))
 
-
-
-
-
     def listen(self, inPipe, outPipe):
         print("wsup")
         self.inputPipe = inPipe
@@ -129,9 +124,6 @@ class Server:
             # conn.settimeout(3)
             if addr[0] not in self.ipDict:
                 _thread.start_new_thread(self.initializeNode, (conn, addr))
-
-
-
 
 
 if __name__=="__main__":
