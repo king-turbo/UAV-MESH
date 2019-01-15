@@ -5,5 +5,5 @@ __pycache__
 .idea
 *.pyc
 *.pyo
-
+*.token
 
