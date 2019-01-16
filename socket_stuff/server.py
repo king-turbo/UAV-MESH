@@ -4,8 +4,9 @@ import _thread
 import select
 import multiprocessing as mp
 import time
+from datetime import datetime, timezone
 from userInterface import UI
-
+from oneskyapi import OneSkyAPI
 
 class VehicleObj:
 
@@ -15,12 +16,16 @@ class VehicleObj:
         self.vehicleType = vehicleType
         self.mode = "default"
         self.updateRate = 0
-        self.GPS = 0
+        self.lat = 0
+        self.lon = 0
+        self.alt = 0
+        self.GUFI = ''
+
 
 
 class Server:
 
-    def __init__(self, HOST, PORT):
+    def __init__(self, HOST, PORT, oneskyAPI):
 
         self.HOST = HOST
         self.PORT = PORT
@@ -30,7 +35,7 @@ class Server:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.HOST, self.PORT))
-
+        self.utm = oneskyAPI
 
     def initializeNode(self, conn, addr):
         try:
@@ -40,12 +45,13 @@ class Server:
                 #dict with ip addresses and the name of the agent
 
                 #agent dict with names as keys and a vehicle class as value
-
+                print(_data)
                 if _data["name"] not in self.agents:
                     print("new agent")
                     self.ipDict[addr[0]] = _data["name"]
                     self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"]))
 
+                    self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
                 elif self.agents[_data["name"]].ip != addr[0]:
                     print("need a unique name")  #TODO: make a fancy exception thing
                     conn.close()
@@ -55,12 +61,38 @@ class Server:
 
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
                 conn.sendall(a)
-
-
                 self.clientHandler(conn, addr)
         except:
             conn.close()
 
+    def createUTMPointFlight(self, name, lon, lat, alt):
+
+        data = '''{
+    "name": "'''+ str(name) +'''",
+    "description": "This is a description.",
+    "aircraftType": "MULTI_ROTOR",
+    "altitudeReference": "WGS84",
+    "longitude": '''+str(lon)+''',
+    "latitude": '''+str(lat)+''',
+    "altitude": '''+str(alt)+''',
+    "radius": 500,
+    "maxHeight": 120,
+    "startTime": "'''+datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")+'''",
+    "stopTime": "2019-12-03T10:16:40Z"
+                }'''
+
+
+        self.agents[name].GUFI = self.utm.createPointFlight(data)
+        print(self.agents[name].GUFI)
+
+    def UTMTelemUpdate(self):
+
+        while True:
+            for agent in self.agents:
+                try:
+                    self.utm.updateTelemetry(self.agents[agent].GUFI, self.agents[agent].lon, self.agents[agent].lat, self.agents[agent].alt)
+                except:
+                    pass
 
     def clientHandler(self, conn, addr):
         oPipe = False
@@ -77,7 +109,9 @@ class Server:
             ##THIS SECTION WILL GET THE DATA FROM THE PRINCESSES
 
 
-                    self.agents[self.ipDict[addr[0]]].GPS = _data["GPS"]
+                    self.agents[self.ipDict[addr[0]]].lon = _data["lon"]
+                    self.agents[self.ipDict[addr[0]]].lat = _data["lat"]
+                    self.agents[self.ipDict[addr[0]]].alt = _data["alt"]
                     self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
                     self.agents[self.ipDict[addr[0]]].mode = _data["mode"]
 
@@ -114,7 +148,10 @@ class Server:
         conn.sendall(json.dumps(msg).encode("utf-8"))
 
     def listen(self, inPipe, outPipe):
-        print("wsup")
+        print("Starting Server")
+
+        _thread.start_new_thread(self.UTMTelemUpdate, ())
+
         self.inputPipe = inPipe
         self.outputPipe = outPipe
         self.inputPipe.send('')
@@ -128,13 +165,20 @@ class Server:
 
 if __name__=="__main__":
 
+
+    with open("mwalton.token", "r") as toke:
+        token = toke.read()
+
     HOST = '192.168.254.11'
     PORT = 65432
     input_parent_conn, input_child_conn = mp.Pipe()
     output_parent_conn, output_child_conn = mp.Pipe()
 
+    #create api interface with onesky
+    utm = OneSkyAPI(token)
+
     ui = UI(input_child_conn, output_parent_conn)
-    queenB = Server(HOST, PORT)
+    queenB = Server(HOST, PORT, utm)
 
     listenProc = mp.Process(target= queenB.listen, args=(input_parent_conn, output_child_conn)).start()
     #

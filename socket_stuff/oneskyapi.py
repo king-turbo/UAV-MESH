@@ -1,13 +1,10 @@
 
 
 import requests
-import json
-from io import StringIO
-from urllib.parse import urlparse
 from datetime import datetime, timezone
 
 
-print(datetime.utcnow())
+
 with open ("mwalton.token", "r") as toke:
     token = toke.read()
 
@@ -27,13 +24,6 @@ dataa = '''{
   "stopTime": "2019-12-03T10:16:40Z"
 }'''
 
-url = 'https://utm.onesky.xyz/api/flights/point'
-
-# session = requests.Session()
-# session.headers.update({'Authorization': 'Bearer {}'.format(token),'Content-type': 'application/json'})
-# r = session.post(url, data=dataa, stream=True)
-# print(r.text)
-
 
 class OneSkyAPI:
     def __init__(self, token):
@@ -47,7 +37,6 @@ class OneSkyAPI:
         return session
 
     def currentTime(self):
-
         return (datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
     def createPointFlight(self, data):
@@ -56,8 +45,9 @@ class OneSkyAPI:
         response = self.session.post(url, data=data, stream=True)
         if response.status_code != 201:
             print("Something's wrong")
+            print(response.status_code)
         else:
-            self.GUFI = response.content.decode('utf-8').split('/')[-1]
+            return response.content.decode('utf-8').split('/')[-1]
 
     def createFlightPlanSimple(self, data):
         url = "https://utm.onesky.xyz/api/flights/pathSimple"
@@ -65,30 +55,26 @@ class OneSkyAPI:
         if response.status_code != 201:
             print("Something's wrong")
         else:
-            self.GUFI = response.content.decode('utf-8').split('/')[-1]
+            return response.content.decode('utf-8').split('/')[-1]
 
-    def update(self):
-        orig = 89.12345678
+    def updateTelemetry(self, GUFI, lon, lat, alt):
 
-        while True:
-            orig = orig + .000001
-            url = 'https://utm.onesky.xyz/api/flights/log/telemetry/' + self.GUFI
+        url = 'https://utm.onesky.xyz/api/flights/log/telemetry/' + GUFI
+        data = '''{
+          "eventType": "TELEMETRY",
+          "timestamp": "''' + self.currentTime()+'''",
+          "referenceLocation":
+          {
+             "longitude":''' + str(lon) +''',
+             "latitude":''' + str(lat) +''',
+             "altitude":'''+ str(alt) +'''
+          },
+          "altitudeReference": "AGL",
+          "data": "any extra data"
+        }'''
 
-            data = '''{
-              "eventType": "TELEMETRY",
-              "timestamp": "''' + self.currentTime()+'''",
-              "referenceLocation":
-              {
-                 "longitude":''' + str(orig)+''',
-                 "latitude": 78.98765432,
-                 "altitude": 410
-              },
-              "altitudeReference": "AGL",
-              "data": "any extra data"
-            }'''
-            print(orig)
-            response = self.session.post(url, data=data, stream=True)
-            print(response.content)
+        response = self.session.post(url, data=data, stream=True)
+
 
 
 
@@ -115,12 +101,3 @@ data2 = '''{
 }'''
 
 
-#
-# # headers = {'Authorization': 'Bearer ' + token}
-#
-# # GUFI = 'test'
-# url = 'https://utm.onesky.xyz/api/flights/point'
-#
-flight = OneSkyAPI(token)
-flight.createFlightPlanSimple(data2)
-flight.update()
