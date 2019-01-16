@@ -82,7 +82,7 @@ class Server:
                 }'''
 
 
-        self.agents[name].GUFI = self.utm.createPointFlight(data)
+        self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
         print(self.agents[name].GUFI)
 
     def UTMTelemUpdate(self):
