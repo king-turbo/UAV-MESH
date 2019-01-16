@@ -3,28 +3,6 @@
 import requests
 from datetime import datetime, timezone
 
-
-
-with open ("mwalton.token", "r") as toke:
-    token = toke.read()
-
-
-
-dataa = '''{
-  "name": "Hello World",
-  "description": "This is a description.",
-  "aircraftType": "MULTI_ROTOR",
-  "altitudeReference": "WGS84",
-  "longitude": 89.12345678,
-  "latitude": 78.98765432,
-  "altitude": 350,
-  "radius": 500,
-  "maxHeight": 120,
-  "startTime": "2019-12-03T10:15:30Z",
-  "stopTime": "2019-12-03T10:16:40Z"
-}'''
-
-
 class OneSkyAPI:
     def __init__(self, token):
         self.token = token
@@ -39,9 +17,23 @@ class OneSkyAPI:
     def currentTime(self):
         return (datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
-    def createPointFlight(self, data):
-        # self.session.headers.update({'Content-type':"application/json"})
+    def createPointFlight(self, name, lon, lat, alt):
+
         url = 'https://utm.onesky.xyz/api/flights/point'
+        data = '''{
+            "name": "''' + str(name) + '''",
+            "description": "This is a description.",
+            "aircraftType": "MULTI_ROTOR",
+            "altitudeReference": "WGS84",
+            "longitude": ''' + str(lon) + ''',
+            "latitude": ''' + str(lat) + ''',
+            "altitude": ''' + str(alt) + ''',
+            "radius": 500,
+            "maxHeight": 120,
+            "startTime": "''' + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") + '''",
+            "stopTime": "2019-12-03T10:16:40Z"
+                    }'''
+
         response = self.session.post(url, data=data, stream=True)
         if response.status_code != 201:
             print("Something's wrong")
@@ -75,29 +67,5 @@ class OneSkyAPI:
 
         response = self.session.post(url, data=data, stream=True)
 
-
-
-
-data2 = '''{
-  "name": "Hello World",
-  "description": "This is a description.",
-  "aircraftType": "MULTI_ROTOR",
-  "altitudeReference": "WGS84",
-  "waypoints": 
-  [
-    {
-        "longitude": 89.12345678,
-        "latitude": 78.98765432,
-        "altitude": 410
-    },
-    {
-        "longitude": 88.98765432,
-        "latitude": 79.12345678,
-        "altitude": 430
-    }
-  ],
-  "startTime": "2011-12-03T10:15:30Z",
-  "speed": 5
-}'''
 
 
