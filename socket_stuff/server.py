@@ -67,21 +67,6 @@ class Server:
 
     def createUTMPointFlight(self, name, lon, lat, alt):
 
-        data = '''{
-    "name": "'''+ str(name) +'''",
-    "description": "This is a description.",
-    "aircraftType": "MULTI_ROTOR",
-    "altitudeReference": "WGS84",
-    "longitude": '''+str(lon)+''',
-    "latitude": '''+str(lat)+''',
-    "altitude": '''+str(alt)+''',
-    "radius": 500,
-    "maxHeight": 120,
-    "startTime": "'''+datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")+'''",
-    "stopTime": "2019-12-03T10:16:40Z"
-                }'''
-
-
         self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
         print(self.agents[name].GUFI)
 
@@ -164,6 +149,10 @@ class Server:
 
 
 if __name__=="__main__":
+
+    '''
+    The user interface and server loops run on different processes.
+    '''
 
 
     with open("mwalton.token", "r") as toke:
