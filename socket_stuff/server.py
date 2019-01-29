@@ -26,7 +26,7 @@ class VehicleObj:
 
 class Server:
 
-    def __init__(self, HOST, PORT, oneskyAPI):
+    def __init__(self, HOST, PORT, oneskyAPI, utmUpdate = True, verbose = True):
 
         self.HOST = HOST
         self.PORT = PORT
@@ -37,6 +37,8 @@ class Server:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.HOST, self.PORT))
         self.utm = oneskyAPI
+        self.utmUpdate = utmUpdate
+        self.verbose = verbose
 
     def initializeNode(self, conn, addr):
         try:
@@ -52,7 +54,10 @@ class Server:
                     self.ipDict[addr[0]] = _data["name"]
                     self.agents[_data["name"]] = (VehicleObj(_data["name"], addr[0], _data["type"]))
 
+                    print(_data)
+
                     self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
+
                 elif self.agents[_data["name"]].ip != addr[0]:
                     print("need a unique name")  #TODO: make a fancy exception thing
                     conn.close()
@@ -61,13 +66,14 @@ class Server:
                     self.ipDict[addr[0]] = _data["name"]
 
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
+
                 conn.sendall(a)
                 self.clientHandler(conn, addr)
         except:
             conn.close()
 
     def createUTMPointFlight(self, name, lon, lat, alt):
-
+        print("are we here?")
         self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
         print(self.agents[name].GUFI)
 
@@ -136,7 +142,8 @@ class Server:
     def listen(self, inPipe, outPipe):
         print("Starting Server")
 
-        _thread.start_new_thread(self.UTMTelemUpdate, ())
+        if self.utmUpdate:
+            _thread.start_new_thread(self.UTMTelemUpdate, ())
 
         self.inputPipe = inPipe
         self.outputPipe = outPipe
@@ -156,6 +163,7 @@ if __name__=="__main__":
     '''
 
 
+
     with open("mwalton.token", "r") as toke:
         token = toke.read()
 
@@ -168,7 +176,7 @@ if __name__=="__main__":
     utm = OneSkyAPI(token)
 
     ui = UI(input_child_conn, output_parent_conn)
-    queenB = Server(HOST, PORT, utm)
+    queenB = Server(HOST, PORT, utm, utmUpdate = False, verbose=True,)
 
     listenProc = mp.Process(target= queenB.listen, args=(input_parent_conn, output_child_conn)).start()
     #
