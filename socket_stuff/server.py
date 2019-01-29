@@ -7,7 +7,8 @@ import time
 from datetime import datetime, timezone
 from userInterface import UI
 from oneskyapi import OneSkyAPI
-
+from localIP import myLocalIP
+from localIP import myLocalPort
 class VehicleObj:
 
     def __init__(self, name, ip, vehicleType):
@@ -158,8 +159,8 @@ if __name__=="__main__":
     with open("mwalton.token", "r") as toke:
         token = toke.read()
 
-    HOST = '192.168.254.11'
-    PORT = 65432
+    HOST = myLocalIP
+    PORT = myLocalPort
     input_parent_conn, input_child_conn = mp.Pipe()
     output_parent_conn, output_child_conn = mp.Pipe()
 
