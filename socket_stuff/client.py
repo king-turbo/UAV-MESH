@@ -20,13 +20,15 @@ class Drone(Vehicle):
         self.global_loc = self.location.global_frame
         return (self.global_loc.lon, self.global_loc.lat, self.global_loc.alt)
 
-class DummyDrone():
+class DummyDrone:
 
     def __init__(self):
-        self.global_loc = 12345.12
+        self.lon = 0
+        self.lat = 0
+        self.alt = 0
 
-    def updateDrone(self):
-        self.global_loc = 9999945.12
+    def updateUAVGPS(self):
+        return (self.lon, self.lat, self.alt)
 
 
 class Client():
@@ -57,7 +59,12 @@ class Client():
                 print("GPS lock is bad")
 
         except:
+
             self.uav = DummyDrone()
+            self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
+            self.initMsgFrmClient["lon"] = self.lon
+            self.initMsgFrmClient["lat"] = self.lat
+            self.initMsgFrmClient["alt"] = self.alt
 
     def update(self):
 
