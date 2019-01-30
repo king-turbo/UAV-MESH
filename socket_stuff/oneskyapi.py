@@ -4,6 +4,7 @@ import requests
 from datetime import datetime, timezone
 
 class OneSkyAPI:
+    #TODO: fill with comments
     def __init__(self, token):
         self.token = token
         self.session = self.createSession()
@@ -18,6 +19,7 @@ class OneSkyAPI:
         return (datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
     def createPointFlight(self, name, lon, lat, alt):
+
 
         url = 'https://utm.onesky.xyz/api/flights/point'
         data = '''{

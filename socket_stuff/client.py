@@ -4,7 +4,13 @@ import time
 from dronekit import Vehicle, connect
 import select
 import sys
+from localIP import myLocalIP, myLocalPort
+
 class Drone(Vehicle):
+    '''
+    This class inherets from the dronekit Vehicle class. The dronekit library is a super easy way to
+    communicate with the flight controller on the UAV
+    '''
 
     def __init__(self, *args):
 
@@ -12,16 +18,18 @@ class Drone(Vehicle):
         self.sendDict = {}
 
     def toJSON(self):
-
+        #Why do I even have this??
         return json.dumps(self.sendDict, default=lambda o: o.__dict__)
 
     def updateUAVGPS(self):
-
+        #grabs the GPS stuff from the flight controller
         self.global_loc = self.location.global_frame
         return (self.global_loc.lon, self.global_loc.lat, self.global_loc.alt)
 
 class DummyDrone:
-
+    '''
+    just for testing purposes
+    '''
     def __init__(self):
         self.lon = 0
         self.lat = 0
@@ -32,6 +40,7 @@ class DummyDrone:
 
 
 class Client():
+    #TODO: fill this with comments
 
     def __init__(self, HOST, PORT, type, name):
 
@@ -121,8 +130,8 @@ class Client():
 
 if __name__=="__main__":
 
-    HOST = '192.168.254.11'
-    PORT = 65432
+    HOST = myLocalIP
+    PORT = myLocalPort
     node = Client(HOST,PORT,"MULTI_ROTOR","cinderella")
     node.initVehicle()
     node.initConn()

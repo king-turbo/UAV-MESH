@@ -5,7 +5,7 @@ import multiprocessing
 
 
 class UI:
-
+    #TODO: fill with comments
     def __init__(self, input_pipe, output_pipe):
 
         self.userInput = ''
