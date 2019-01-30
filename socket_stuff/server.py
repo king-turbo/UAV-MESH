@@ -182,13 +182,8 @@ if __name__=="__main__":
     #
     ui.start()
 
-    # queenB.listen(parent_conn)
-    # while True:
-    #
-    #     time.sleep(.5)
-    #     try:
-    #         a = parent_conn.recv()
-    #         print(a['rapunzel'].ip)
-    #     except:
-    #         pass
+
+    #TODO: create static /dev/tty
+    #TODO: work on exception handling
+    #TODO: work on reconnect for client side
 
