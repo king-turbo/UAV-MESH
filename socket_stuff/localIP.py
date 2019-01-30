@@ -1,3 +1,3 @@
 
-myLocalIP = '192.168.254.11'
-myLocalPort = 65432
+myLocalIP = '<ip address>'
+myLocalPort = 12345
