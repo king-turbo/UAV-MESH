@@ -48,7 +48,7 @@ class Client():
 
     def initVehicle(self):
         try:
-            self.uav = connect('/dev/ttyACM0', wait_ready=True, vehicle_class=Drone)
+            self.uav = connect('/dev/ttyACM1', wait_ready=True, vehicle_class=Drone)
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
             if self.lon != 0:
 
@@ -59,6 +59,7 @@ class Client():
                 print("GPS lock is bad")
 
         except:
+
 
             self.uav = DummyDrone()
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
@@ -92,22 +93,30 @@ class Client():
     def sendData(self):
 
         while True:
+            try:
+                tic = time.time()
+                self.update()
+                self.sock.sendall(json.dumps(self.sendDict).encode("utf-8"))
+                r, _, _ = select.select([self.sock],[],[], .05)
+                if r:
+                    data = self.sock.recv(1024)
+                    print(data)
+                    _data = json.loads(data.decode("utf-8"))
+                    if _data[0] == 'rate':
+                        self.updateRate = int(_data[1])
+                    #add all the other configurable crap here
 
-            tic = time.time()
-            self.update()
-            self.sock.sendall(json.dumps(self.sendDict).encode("utf-8"))
-            r, _, _ = select.select([self.sock],[],[], .05)
-            if r:
-                data = self.sock.recv(1024)
-                print(data)
-                _data = json.loads(data.decode("utf-8"))
-                if _data[0] == 'rate':
-                    self.updateRate = int(_data[1])
-                #add all the other configurable crap here
 
+                toc=  time.time() - tic
+                time.sleep((1 / self.updateRate)  - toc)
 
-            toc=  time.time() - tic
-            time.sleep((1 / self.updateRate)  - toc)
+            except KeyboardInterrupt:
+
+                self.closeConnection()
+
+    def closeConnection(self):
+
+        self.sock.close()
 
 
 if __name__=="__main__":
