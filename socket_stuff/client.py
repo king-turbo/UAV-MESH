@@ -65,6 +65,9 @@ class Client():
                 self.initMsgFrmClient["lat"] = self.lat
                 self.initMsgFrmClient["alt"] = self.alt
             else:
+                self.initMsgFrmClient["lon"] = 0
+                self.initMsgFrmClient["lat"] = 0
+                self.initMsgFrmClient["alt"] = 0
                 print("GPS lock is bad")
 
         except:
@@ -79,6 +82,8 @@ class Client():
     def update(self):
 
         self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
+        if self.lon == 0:
+            print("GPS lock is bad")
 
         self.sendDict = {"name" : self.name,
                          "mode" : self.mode,
