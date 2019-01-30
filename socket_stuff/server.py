@@ -56,7 +56,8 @@ class Server:
 
                     print(_data)
 
-                    self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
+                    if self.utmUpdate:
+                        self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
 
                 elif self.agents[_data["name"]].ip != addr[0]:
                     print("need a unique name")  #TODO: make a fancy exception thing
@@ -64,7 +65,6 @@ class Server:
                     return None
                 elif self.agents[_data["name"]].ip == addr[0]:
                     self.ipDict[addr[0]] = _data["name"]
-
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
 
                 conn.sendall(a)
@@ -73,7 +73,7 @@ class Server:
             conn.close()
 
     def createUTMPointFlight(self, name, lon, lat, alt):
-        print("are we here?")
+
         self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
         print(self.agents[name].GUFI)
 
