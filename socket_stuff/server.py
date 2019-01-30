@@ -75,11 +75,10 @@ class Server:
             if data:
                 #decode data
                 _data = json.loads(data.decode("utf-8"))
-                print(_data)
 
                 #if the connection is new
                 if _data["name"] not in self.agents:
-                    print("new agent")
+                    print("{} has connected at Lat:{}, Lon:{}, Alt:{}.".format(_data["name"],_data["lat"],_data["lon"],_data["alt"]))
                     #store the new connection name in the IP dictionary
                     self.ipDict[addr[0]] = _data["name"]
                     #also store the new connetion's name in the agents dictionary. the key is the name and the value is
@@ -99,6 +98,7 @@ class Server:
                 #if the vehicle's name is already stored and the IP addresses match, this means that
                 #the vehicle lost connection and reconnected
                 elif self.agents[_data["name"]].ip == addr[0]:
+                    print("{} has reconnected.".format(_data["name"]))
                     self.ipDict[addr[0]] = _data["name"]
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
                 conn.sendall(a)
@@ -235,7 +235,7 @@ if __name__=="__main__":
     #instantiate the UI with the pipes
     ui = UI(input_child_conn, output_parent_conn)
     #instantiate the server
-    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, utmUpdate = False, verbose=True,)
+    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, utmUpdate = True, verbose=True,)
     #start the listening method with pipes
     listenProc = mp.Process(target= queenB.listen, args=()).start()
     #
