@@ -40,7 +40,11 @@ class DummyDrone:
 
 
 class Client():
-    #TODO: fill this with comments
+
+    '''
+    Client class handles communication from the flight controller and the server
+    
+    '''
 
     def __init__(self, HOST, PORT, type, name):
 
@@ -56,14 +60,22 @@ class Client():
 
 
     def initVehicle(self):
+        '''
+        This method initializes the connection to the flight controller
+        '''
         try:
+            #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static
             self.uav = connect('/dev/ttyACM1', wait_ready=True, vehicle_class=Drone)
+            #call the update method from vehicle class. This gets the first GPS coordinates from the flight controller
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
-            if self.lon != 0:
 
+            #TODO: make this more robust, basically if we are not on the equator
+            if self.lon != 0:
+                #then set the init GPS coordinates to the GPS coordinates returned from the vehicle 
                 self.initMsgFrmClient["lon"] = self.lon
                 self.initMsgFrmClient["lat"] = self.lat
                 self.initMsgFrmClient["alt"] = self.alt
+            #if the lon is 0, then that means that the GPS lock is probably bad (TODO: make this less stupid)    
             else:
                 self.initMsgFrmClient["lon"] = 0
                 self.initMsgFrmClient["lat"] = 0
@@ -72,8 +84,9 @@ class Client():
 
         except:
 
-
+            #if we are unable to connect to the flight controller, then use the DummyDrone class for testing purposes
             self.uav = DummyDrone()
+            #this will just returns 0s
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
             self.initMsgFrmClient["lon"] = self.lon
             self.initMsgFrmClient["lat"] = self.lat
@@ -81,6 +94,11 @@ class Client():
 
     def update(self):
 
+        '''
+        This method gets updates from the flight controller and stores the new GPS values in lon,lat,alt.
+        It then updates the sendDict, which is the dictionary that is sent to the server
+        '''
+        
         self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
         if self.lon == 0:
             print("GPS lock is bad")
@@ -93,34 +111,55 @@ class Client():
                          "alt": self.alt}
 
     def initConn(self):
-
+        '''
+        This method initializes the connection to the server. 
+        '''
+        #connect to the server
         self.sock.connect((self.HOST, self.PORT))
+        #sent the init message
         self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
+        #recieve data
         data = self.sock.recv(1024)
         print(data)
+        #decode data
         _data = json.loads(data.decode("utf-8"))
+        #change the updateRate to whatever the server requests
         self.updateRate = _data["freq"]
+        #change mode to what the server requests
         self.mode = _data["mode"]
+        #if the mode is in default
         if _data["mode"] == "default":
+            #then send data
             self.sendData()
 
     def sendData(self):
-
+        '''
+        sendData handles information to and from the server once a connection has been made
+        '''
         while True:
             try:
+                #We want to send the data at precise intervals, so we'll have the loop sleep at time = 1/updatrate - looptime
                 tic = time.time()
+                #get updates from the flight controller
                 self.update()
+                #convert to JSON and send to server
                 self.sock.sendall(json.dumps(self.sendDict).encode("utf-8"))
+                #wait for a response from server
                 r, _, _ = select.select([self.sock],[],[], .05)
+                #if there is a response
                 if r:
+                    #recieve the data
                     data = self.sock.recv(1024)
                     print(data)
+                    #decode the data
                     _data = json.loads(data.decode("utf-8"))
+                    #Add configurable stuff here. for example if you wanted to be able to control X on the client side, if _data[0]== 'X':
+                    #                                                                                                       self.X = int(_data[1])
                     if _data[0] == 'rate':
                         self.updateRate = int(_data[1])
-                    #add all the other configurable crap here
+                        
 
-
+                #get the loop time        
                 toc=  time.time() - tic
                 time.sleep((1 / self.updateRate)  - toc)
 
