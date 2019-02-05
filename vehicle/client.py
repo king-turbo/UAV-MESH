@@ -7,7 +7,7 @@ import json
 import time
 from dronekit import Vehicle, connect
 import select
-import sys
+import subprocess
 from localIP import myLocalIP, myLocalPort
 
 class Drone(Vehicle):
@@ -67,9 +67,14 @@ class Client():
         '''
         This method initializes the connection to the flight controller
         '''
+        #run the ttyfinder shell script to find what type of flight controller and which ACM it is connected to
+        subprocess.call(['./ttyfinder.sh'])
+        time.sleep(.00001)
+        self.vehicleConnection = [line.rstrip('\n') for line in open('sysdisc.txt')]
         try:
-            #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static
-            self.uav = connect('/dev/ttyACM1', wait_ready=True, vehicle_class=Drone)
+            #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static (this is fixed?)
+                                                         #TODO: need to make a thing for other types of flight controllers
+            self.uav = connect(self.vehicleConnection[0], wait_ready=True, vehicle_class=Drone)
             #call the update method from vehicle class. This gets the first GPS coordinates from the flight controller
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
 
@@ -200,4 +205,4 @@ if __name__=="__main__":
     node.initConn()
 
 
-   #TODO: create static /dev/tty
+   #TODO: create static /dev/tty (done! not static ttyACM, instead search for which ACM has the FC)
