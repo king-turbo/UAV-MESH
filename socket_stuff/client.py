@@ -115,22 +115,30 @@ class Client():
         This method initializes the connection to the server. 
         '''
         #connect to the server
-        self.sock.connect((self.HOST, self.PORT))
-        #sent the init message
-        self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
-        #recieve data
-        data = self.sock.recv(1024)
-        print(data)
-        #decode data
-        _data = json.loads(data.decode("utf-8"))
-        #change the updateRate to whatever the server requests
-        self.updateRate = _data["freq"]
-        #change mode to what the server requests
-        self.mode = _data["mode"]
-        #if the mode is in default
-        if _data["mode"] == "default":
-            #then send data
-            self.sendData()
+        try:
+            self.sock.connect((self.HOST, self.PORT))
+            #sent the init message
+            self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
+            #recieve data
+            data = self.sock.recv(1024)
+            print(data)
+            #decode data
+            _data = json.loads(data.decode("utf-8"))
+            #change the updateRate to whatever the server requests
+            self.updateRate = _data["freq"]
+            #change mode to what the server requests
+            self.mode = _data["mode"]
+            #if the mode is in default
+            if _data["mode"] == "default":
+                #then send data
+                self.sendData()
+        except ConnectionResetError:                            #TODO: Figure out exception for timeout error and
+                                                                #TODO: whether or not to have separate method for reconnecting
+            print("Connection Reset... Reconnecting\n")
+            time.sleep(2)
+            self.initConn()
+
+
 
     def sendData(self):
         '''
@@ -145,7 +153,7 @@ class Client():
                 #convert to JSON and send to server
                 self.sock.sendall(json.dumps(self.sendDict).encode("utf-8"))
                 #wait for a response from server
-                r, _, _ = select.select([self.sock],[],[], .05)
+                r, _, _ = select.select([self.sock],[],[], .2)
                 #if there is a response
                 if r:
                     #recieve the data
@@ -164,8 +172,15 @@ class Client():
                 time.sleep((1 / self.updateRate)  - toc)
 
             except KeyboardInterrupt:
-
                 self.closeConnection()
+
+            except ConnectionResetError:
+                print("Connection Reset... Reconnecting\n")
+                self.closeConnection()
+                time.sleep(2)
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.initConn()
+                break
 
     def closeConnection(self):
 
@@ -179,3 +194,6 @@ if __name__=="__main__":
     node = Client(HOST,PORT,"MULTI_ROTOR","cinderella")
     node.initVehicle()
     node.initConn()
+
+
+   #TODO: create static /dev/tty
