@@ -102,7 +102,7 @@ class Server:
                     self.ipDict[addr[0]] = _data["name"]
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
                 conn.sendall(a)
-                self.clientHandler(conn, addr)
+                self.clientHandler(conn, addr) #TODO: check for GUFI, remake if needed
         except:
             conn.close()
 
@@ -242,7 +242,8 @@ if __name__=="__main__":
     ui.start()
 
 
-    #TODO: create static /dev/tty
+
     #TODO: work on exception handling
-    #TODO: work on reconnect for client side
+    #TODO: work on reconnect for client side (did this now need to test for different types of comms failures)
+
 
