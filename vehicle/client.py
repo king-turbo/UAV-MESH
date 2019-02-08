@@ -73,6 +73,7 @@ class Client():
         subprocess.call(['./sysinfo.sh'])
         time.sleep(.00001)
         self.peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
+        self.FCtype = self.peripherals[1]
         self.ethernetIP = self.peripherals[2]
 
         self.ui = ledDisplay.User2VehicleInterface(0x3C, 0, self.ethernetIP,0)  # TODO: add bat0 and wlan0
@@ -82,6 +83,8 @@ class Client():
 
             #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static (this is fixed?)
                                                          #TODO: need to make a thing for other types of flight controllers
+            time.sleep(5)
+            print("what?")
             self.uav = connect(self.peripherals[0], wait_ready=True, vehicle_class=Drone)
             #call the update method from vehicle class. This gets the first GPS coordinates from the flight controller
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
