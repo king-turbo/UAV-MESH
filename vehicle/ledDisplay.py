@@ -28,6 +28,8 @@ class User2VehicleInterface:
         self.loadFlag = False
         self.dummyFC = False
         self.messages={"connecting2FC" : [["Initializing",(12,0,0,0)],["flight controller.",(12,1,0,0)]],
+                       "connected!"    : [["Connected!"
+                                           "",(20,0,0,0)]],
                        "dummy"         : [["Using Dummy",(12,0,0,0)], ["flight controller.", (12,1,0,0)]],
                        "status"        : [["IP: "+self.ethernetIP,(10,0,0,0)]]
                        }
@@ -41,7 +43,7 @@ class User2VehicleInterface:
             self.drawText(m[0], m[1])
         self.displayText()
         if self.loadFlag:
-            _thread.start_new_thread(self.loading,(message,))
+            self.loading(message)
 
     def drawText(self, text, dims):
         size, line, offset, yoff = dims
@@ -62,7 +64,7 @@ class User2VehicleInterface:
                 self.drawText(m[0], m[1])
             self.drawText("...", (12, 2, offset,-2))
             self.displayText()
-            time.sleep(.5)
+            time.sleep(.1)
             offset += 8 * sign
             if offset >= 106:
                 sign = -1
@@ -74,16 +76,32 @@ class User2VehicleInterface:
         while True:
             if self.displayMode == "connecting2FC":
                 self.LCDMessage("connecting2FC")
+                self.LCDMessage("connected!")
+                time.sleep(2)
             elif self.displayMode == "dummy":
                 self.LCDMessage("dummy")
             elif self.displayMode == "status":
-                print("hello?")
                 self.LCDMessage("status")
 
 
 
 
 if __name__ == '__main__':
+
+
+    ui = User2VehicleInterface(0x3C, "123.123.123.123","123.123.123.123","123.123.123.123")
+    ui.loadFlag = True
+    ui.displayMode = "connecting2FC"
+
+    while True:
+
+        try:
+            time.sleep(5)
+            ui.loadFlag=False
+            ui.displayMode="status"
+
+        except:
+            break
 
 
     pass
