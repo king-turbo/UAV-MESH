@@ -243,8 +243,11 @@ if __name__=="__main__":
 
 
 
-    #TODO: work on exception handling
-    #TODO: work on reconnect for client side (did this now need to test for different types of comms failures)
-    #TODO: Need to figure out GUFI handling for disconnected vehicles/server failure
-
+    '''
+    TODO: work on exception handling
+    TODO: work on reconnect for client side (did this now need to test for different types of comms failures)
+    TODO: Need to figure out GUFI handling for disconnected vehicles/server failure
+    TODO: properly get rid of threads and processes 
+    TODO: switch from _threading crap to the ez thread
+    '''
 
