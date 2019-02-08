@@ -9,7 +9,8 @@ from dronekit import Vehicle, connect
 import select
 import subprocess
 from localIP import myLocalIP, myLocalPort
-
+import _thread
+import ledDisplay
 class Drone(Vehicle):
     '''
     This class inherets from the dronekit Vehicle class. The dronekit library is a super easy way to
@@ -63,21 +64,29 @@ class Client():
         self.type = type
 
 
+
     def initVehicle(self):
         '''
         This method initializes the connection to the flight controller
         '''
         #run the ttyfinder shell script to find what type of flight controller and which ACM it is connected to
-        subprocess.call(['./ttyfinder.sh'])
+        subprocess.call(['./sysinfo.sh'])
         time.sleep(.00001)
-        self.vehicleConnection = [line.rstrip('\n') for line in open('sysdisc.txt')]
+        self.peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
+        self.ethernetIP = self.peripherals[2]
+
+        self.ui = ledDisplay.User2VehicleInterface(0x3C, 0, self.ethernetIP,0)  # TODO: add bat0 and wlan0
+        self.ui.loadFlag = True                                                 # TODO: Need better iic thing
+        self.ui.displayMode = "connecting2FC"
         try:
+
             #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static (this is fixed?)
                                                          #TODO: need to make a thing for other types of flight controllers
-            self.uav = connect(self.vehicleConnection[0], wait_ready=True, vehicle_class=Drone)
+            self.uav = connect(self.peripherals[0], wait_ready=True, vehicle_class=Drone)
             #call the update method from vehicle class. This gets the first GPS coordinates from the flight controller
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
 
+            self.ui.loadFlag = False
             #TODO: make this more robust, basically if we are not on the equator
             if self.lon != 0:
                 #then set the init GPS coordinates to the GPS coordinates returned from the vehicle 
@@ -92,7 +101,7 @@ class Client():
                 print("GPS lock is bad")
 
         except:
-
+            self.ui.loadFlag = False
             #if we are unable to connect to the flight controller, then use the DummyDrone class for testing purposes
             self.uav = DummyDrone()
             #this will just returns 0s
@@ -100,6 +109,10 @@ class Client():
             self.initMsgFrmClient["lon"] = self.lon
             self.initMsgFrmClient["lat"] = self.lat
             self.initMsgFrmClient["alt"] = self.alt
+            self.ui.displayMode = "dummy"
+
+        self.ui.displayMode = "status"
+
 
     def update(self):
 
@@ -124,6 +137,7 @@ class Client():
         This method initializes the connection to the server. 
         '''
         #connect to the server
+
         try:
             self.sock.connect((self.HOST, self.PORT))
             #sent the init message
