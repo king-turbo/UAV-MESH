@@ -11,7 +11,7 @@ import _thread
 
 class User2VehicleInterface:
 
-    def __init__(self,I2C,batIP,ethernetIP,wirelessIP):
+    def __init__(self,I2C, batIP, ethernetIP, wifiIP):
 
         self.fontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
         self.disp = fruit.SSD1306_128_32(rst=24, i2c_address=I2C)
@@ -20,23 +20,28 @@ class User2VehicleInterface:
         self.image = Image.new('1', (self.width, self.height))
         self.draw = ImageDraw.Draw(self.image)
         self.font = ImageFont.truetype(self.fontPath, 20)
-
+        self.batIP, self.ethernetIP, self.wifiIP = batIP, ethernetIP, wifiIP
         self.disp.begin()
         self.disp.clear()
         self.disp.display()
         self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
-        self.loadFlag = True
-        self.currentlyLoading = False
-        self.messages={"connecting2FC" : [["Initializing",(12,0,0,0)],["flight controller...",(12,1,0,0)]]}
+        self.loadFlag = False
+        self.dummyFC = False
+        self.messages={"connecting2FC" : [["Initializing",(12,0,0,0)],["flight controller.",(12,1,0,0)]],
+                       "dummy"         : [["Using Dummy",(12,0,0,0)], ["flight controller.", (12,1,0,0)]],
+                       "status"        : [["IP: "+self.ethernetIP,(10,0,0,0)]]
+                       }
 
+        self.displayMode = ""
+        _thread.start_new_thread(self.main, ())
 
-    def connectingToFC(self):
-        for m in self.messages["connecting2FC"]:
+    def LCDMessage(self, message):
+        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
+        for m in self.messages[message]:
             self.drawText(m[0], m[1])
         self.displayText()
-        _thread.start_new_thread(self.loading,("connecting2FC",))
-
-
+        if self.loadFlag:
+            _thread.start_new_thread(self.loading,(message,))
 
     def drawText(self, text, dims):
         size, line, offset, yoff = dims
@@ -46,10 +51,9 @@ class User2VehicleInterface:
     def displayText(self):
         self.disp.image(self.image)
         self.disp.display()
-        time.sleep(.01)
+        time.sleep(1)
 
     def loading(self, prevText):
-
         offset=0
         sign = 1
         while self.loadFlag:
@@ -66,23 +70,20 @@ class User2VehicleInterface:
                 sign = 1
 
     def main(self):
-        pass
+
+        while True:
+            if self.displayMode == "connecting2FC":
+                self.LCDMessage("connecting2FC")
+            elif self.displayMode == "dummy":
+                self.LCDMessage("dummy")
+            elif self.displayMode == "status":
+                print("hello?")
+                self.LCDMessage("status")
+
 
 
 
 if __name__ == '__main__':
 
 
-    ui = User2VehicleInterface(I2C=0x3C)
-    ui.connectingToFC()
-
-    try:
-        tic = time.time()
-        print("startuing")
-        while True:
-            if time.time() - tic >= 10:
-                ui.loadFlag = False
-                break
-
-    except KeyboardInterrupt:
-        GPIO.cleanup()
+    pass
