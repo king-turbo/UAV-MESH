@@ -28,8 +28,7 @@ class User2VehicleInterface:
         self.loadFlag = False
         self.dummyFC = False
         self.messages={"connecting2FC" : [["Initializing",(12,0,0,0)],["flight controller.",(12,1,0,0)]],
-                       "connected!"    : [["Connected!"
-                                           "",(20,0,0,0)]],
+                       "connected!"    : [["Connected!",(20,0,0,0)]],
                        "dummy"         : [["Using Dummy",(12,0,0,0)], ["flight controller.", (12,1,0,0)]],
                        "status"        : [["IP: "+self.ethernetIP,(10,0,0,0)]]
                        }
