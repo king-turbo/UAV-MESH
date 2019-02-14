@@ -1,5 +1,8 @@
 import socket
 import json
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import _thread
 import select
 import multiprocessing as mp
