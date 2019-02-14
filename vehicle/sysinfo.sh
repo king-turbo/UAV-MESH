@@ -9,7 +9,14 @@ do
     echo "/dev/ttyACM""$VARIABLE" >> "sysdisc.txt"
     echo "ardupilot" >> "sysdisc.txt"
     break
+    elif udevadm info --query=all --name=/dev/ttyACM$VARIABLE | grep --q "3D_Robotics_PX4"; then
+    touch "sysdisc.txt"
+    echo "/dev/ttyACM""$VARIABLE" >> "sysdisc.txt"
+    echo "pixhawk" >> "sysdisc.txt"
+    break
     fi
+    
+
     if [ $VARIABLE == 6 ]; then
     echo -e $"None\nNone" >> "sysdisc.txt"
     fi
