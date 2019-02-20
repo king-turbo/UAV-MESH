@@ -8,10 +8,9 @@ from PIL import ImageFont
 import _thread
 
 
-
 class User2VehicleInterface:
 
-    def __init__(self,I2C, batIP, ethernetIP, wifiIP):
+    def __init__(self, I2C, batIP, ethernetIP, wifiIP):
 
         self.fontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
         self.disp = fruit.SSD1306_128_32(rst=24, i2c_address=I2C)
@@ -27,11 +26,11 @@ class User2VehicleInterface:
         self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
         self.loadFlag = False
         self.dummyFC = False
-        self.messages={"connecting2FC" : [["Initializing",(12,0,0,0)],["flight controller.",(12,1,0,0)]],
-                       "connected!"    : [["Connected!",(20,0,0,0)]],
-                       "dummy"         : [["Using Dummy",(12,0,0,0)], ["flight controller.", (12,1,0,0)]],
-                       "status"        : [["IP: "+self.ethernetIP,(10,0,0,0)]]
-                       }
+        self.messages = {"connecting2FC": [["Initializing", (12, 0, 0, 0)], ["flight controller.", (12, 1, 0, 0)]],
+                         "connected!": [["Connected!", (20, 0, 0, 0)]],
+                         "dummy": [["Using Dummy", (12, 0, 0, 0)], ["flight controller.", (12, 1, 0, 0)]],
+                         "status": [["IP: " + self.ethernetIP, (10, 0, 0, 0)]]
+                         }
 
         self.displayMode = ""
         _thread.start_new_thread(self.main, ())
@@ -47,7 +46,7 @@ class User2VehicleInterface:
     def drawText(self, text, dims):
         size, line, offset, yoff = dims
         font = ImageFont.truetype(self.fontPath, size)
-        self.draw.text((offset, line*size + yoff), text, font=font, fill=1)
+        self.draw.text((offset, line * size + yoff), text, font=font, fill=1)
 
     def displayText(self):
         self.disp.image(self.image)
@@ -55,13 +54,13 @@ class User2VehicleInterface:
         time.sleep(1)
 
     def loading(self, prevText):
-        offset=0
+        offset = 0
         sign = 1
         while self.loadFlag:
             self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
             for m in self.messages[prevText]:
                 self.drawText(m[0], m[1])
-            self.drawText("...", (12, 2, offset,-2))
+            self.drawText("...", (12, 2, offset, -2))
             self.displayText()
             time.sleep(.1)
             offset += 8 * sign
@@ -83,12 +82,9 @@ class User2VehicleInterface:
                 self.LCDMessage("status")
 
 
-
-
 if __name__ == '__main__':
 
-
-    ui = User2VehicleInterface(0x3C, "123.123.123.123","123.123.123.123","123.123.123.123")
+    ui = User2VehicleInterface(0x3C, "123.123.123.123", "123.123.123.123", "123.123.123.123")
     ui.loadFlag = True
     ui.displayMode = "connecting2FC"
 
@@ -96,11 +92,10 @@ if __name__ == '__main__':
 
         try:
             time.sleep(5)
-            ui.loadFlag=False
-            ui.displayMode="status"
+            ui.loadFlag = False
+            ui.displayMode = "status"
 
         except:
             break
-
 
     pass

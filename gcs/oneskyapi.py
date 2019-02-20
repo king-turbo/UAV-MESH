@@ -4,22 +4,26 @@ import requests
 from datetime import datetime, timezone
 
 class OneSkyAPI:
+
+
     #TODO: fill with comments
     def __init__(self, token):
+
         self.token = token
         self.session = self.createSession()
 
     def createSession(self):
+
         session = requests.Session()
         session.headers.update({'Authorization': 'Bearer {}'.format(self.token),
-            'Content-type': 'application/json'})
+                                'Content-type': 'application/json'})
         return session
 
     def currentTime(self):
-        return (datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def createPointFlight(self, name, lon, lat, alt):
-
 
         url = 'https://utm.onesky.xyz/api/flights/point'
         data = '''{
@@ -44,6 +48,7 @@ class OneSkyAPI:
             return response.content.decode('utf-8').split('/')[-1]
 
     def createFlightPlanSimple(self, data):
+
         url = "https://utm.onesky.xyz/api/flights/pathSimple"
         response = self.session.post(url, data=data)
         if response.status_code != 201:
@@ -59,9 +64,9 @@ class OneSkyAPI:
           "timestamp": "''' + self.currentTime()+'''",
           "referenceLocation":
           {
-             "longitude":''' + str(lon) +''',
-             "latitude":''' + str(lat) +''',
-             "altitude":'''+ str(alt) +'''
+             "longitude":''' + str(lon) + ''',
+             "latitude":''' + str(lat) + ''',
+             "altitude":'''+ str(alt) + '''
           },
           "altitudeReference": "AGL",
           "data": "any extra data"

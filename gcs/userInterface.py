@@ -2,16 +2,13 @@ import _thread
 import multiprocessing
 
 
-
-
 class UI:
-    #TODO: fill with comments
+    # TODO: fill with comments
     def __init__(self, input_pipe, output_pipe):
 
         self.userInput = ''
         self.inPipe = input_pipe
         self.outPipe = output_pipe
-
 
     def start(self):
         self.listener = _thread.start_new_thread(self.userInputLoop, ())
@@ -32,7 +29,7 @@ class UI:
                 input = self.userInput.split(".")
 
                 if input[0] != '':
-                    print (len(input))
+                    print(len(input))
                 if input[0] == 'agents':
                     for i in pipeData:
                         print("{} : {}".format(i, pipeData[i].ip))
@@ -47,8 +44,8 @@ class UI:
                         print(pipeData[input[0]].upateRate)
 
                 if input[0] == 'set' and len(input) == 4:
-                            #name   #parameter  #newvalue
-                    inst = [input[1],input[2],input[3]]
+                    # name   #parameter  #newvalue
+                    inst = [input[1], input[2], input[3]]
                     self.outPipe.send(inst)
 
 
@@ -63,4 +60,3 @@ class UI:
 
     def dummyfunction(self):
         whatisthisnotworking = 1
-        
