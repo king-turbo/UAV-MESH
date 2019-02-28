@@ -10,19 +10,19 @@ import time
 from datetime import datetime, timezone
 from userInterface import UI
 from oneskyapi import OneSkyAPI
-from localIP import myLocalIP
-from localIP import myLocalPort
-
+import subprocess
 
 class VehicleClass:
     '''
     The VehicleClass class is just a container of information for each vehicle that will be stored in a dictionary
     There are no methods, just attributes. This is just so we can pull the vehicle object from the
     dictionary and find values by doing something like: vehicleObject.valueWeWant
+    I should be using a dictionary but I dont wanna ¯\_(._. ' )_/¯
     '''
 
     def __init__(self, name, ip, vehicleType):
         self.name = name
+
         self.ip = ip
         self.vehicleType = vehicleType
         self.mode = "default"
@@ -213,6 +213,25 @@ class Server:
             if addr[0] not in self.ipDict:
                 _thread.start_new_thread(self.initializeNode, (conn, addr))
 
+def getLocalIP(device=''):
+
+    if os.name == 'nt':
+        return socket.gethostbyname(socket.gethostname())
+    if os.name =='posix':
+        subprocess.call(['.././sysinfo.sh'])
+        time.sleep(.00001)
+        peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
+        if device == 'eth0':
+            if peripherals[2] == 'None':
+                return socket.gethostbyname(socket.gethostname())   #all this shit needs to be tested
+            else:
+                return peripherals[2]
+        if device == 'bat0':
+            return peripherals[3]
+        if device == 'wlan0':
+            return peripherals[4]
+
+
 
 if __name__=="__main__":
 
@@ -225,8 +244,9 @@ if __name__=="__main__":
         token = toke.read()
 
     #Get the IP and Port of server from the localIP py file
-    HOST = myLocalIP
-    PORT = myLocalPort
+
+    HOST = getLocalIP()
+    PORT = 65432
 
     #These two pipes send data from the UI to the clientHandler server loop
     input_parent_conn, input_child_conn = mp.Pipe()

@@ -70,7 +70,7 @@ class Client():
         This method initializes the connection to the flight controller
         '''
         #run the ttyfinder shell script to find what type of flight controller and which ACM it is connected to
-        subprocess.call(['./sysinfo.sh'])
+        subprocess.call(['.././sysinfo.sh'])
         time.sleep(.00001)
         self.peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
         self.FCtype = self.peripherals[1]
