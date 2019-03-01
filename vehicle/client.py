@@ -8,9 +8,11 @@ import time
 from dronekit import Vehicle, connect
 import select
 import subprocess
-from localIP import myLocalIP, myLocalPort
-import _thread
-import ledDisplay
+from node_com import NodeCom
+import led_display
+
+
+
 class Drone(Vehicle):
     '''
     This class inherets from the dronekit Vehicle class. The dronekit library is a super easy way to
@@ -51,11 +53,11 @@ class Client():
     
     '''
 
-    def __init__(self, HOST, PORT, type, name):
+    def __init__(self, type, name, allowLED = False):
 
+        self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.HOST = HOST
-        self.PORT = PORT
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.initMsgFrmClient = {"type" : type, "name" : name}
         self.status = "default"
         self.updateRate = 5
@@ -64,32 +66,34 @@ class Client():
         self.type = type
 
 
-
     def initVehicle(self):
         '''
-        This method initializes the connection to the flight controller
+        This method initializes the connection to the flight controller and pulls local IP information
         '''
         #run the ttyfinder shell script to find what type of flight controller and which ACM it is connected to
         subprocess.call(['.././sysinfo.sh'])
         time.sleep(.00001)
         self.peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
         self.FCtype = self.peripherals[1]
+
+        #TODO: make it so it can switch between eth0, bat0, wlan0
         self.ethernetIP = self.peripherals[2]
 
-        self.ui = ledDisplay.User2VehicleInterface(0x3C, 0, self.ethernetIP,0)  # TODO: add bat0 and wlan0
-        self.ui.loadFlag = True                                                 # TODO: Need better iic thing
-        self.ui.displayMode = "connecting2FC"
+        if self.allowDisplay:
+            self.ui = led_display.User2VehicleInterface(0x3C, 0, self.ethernetIP,0)  # TODO: add bat0 and wlan0
+            self.ui.loadFlag = True                                                 # TODO: Need better iic thing
+            self.ui.displayMode = "connecting2FC"
         try:
 
             #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static (this is fixed?)
                                                          #TODO: need to make a thing for other types of flight controllers
             time.sleep(5)
-            print("what?")
             self.uav = connect(self.peripherals[0], wait_ready=True, vehicle_class=Drone)
             #call the update method from vehicle class. This gets the first GPS coordinates from the flight controller
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
 
-            self.ui.loadFlag = False
+            if self.allowDisplay:
+                self.ui.loadFlag = False
             #TODO: make this more robust, basically if we are not on the equator
             if self.lon != 0:
                 #then set the init GPS coordinates to the GPS coordinates returned from the vehicle 
@@ -104,7 +108,8 @@ class Client():
                 print("GPS lock is bad")
 
         except:
-            self.ui.loadFlag = False
+            if self.allowDisplay:
+                self.ui.loadFlag = False
             #if we are unable to connect to the flight controller, then use the DummyDrone class for testing purposes
             self.uav = DummyDrone()
             #this will just returns 0s
@@ -112,9 +117,11 @@ class Client():
             self.initMsgFrmClient["lon"] = self.lon
             self.initMsgFrmClient["lat"] = self.lat
             self.initMsgFrmClient["alt"] = self.alt
-            self.ui.displayMode = "dummy"
+            if self.allowDisplay:
+                self.ui.displayMode = "dummy"
 
-        self.ui.displayMode = "status"
+        if self.allowDisplay:
+            self.ui.displayMode = "status"
 
 
     def update(self):
@@ -135,14 +142,31 @@ class Client():
                          "lat" : self.lat,
                          "alt": self.alt}
 
+    def findGCS(self):
+        self.nodeCom = NodeCom(self.ethernetIP, self.name)
+        self.nodeCom.findNodes()
+        self.gcsList = self.nodeCom.returnGCS()
+        print(self.gcsList)
+        if not self.gcsList:
+            print("empty")
+        #TODO: need to make the user select which GCS from the LED display
+        else:
+            self.HOST = self.gcsList[0][1]
+
+
+
     def initConn(self):
+
         '''
         This method initializes the connection to the server. 
         '''
         #connect to the server
 
+
+        self.findGCS()
+
         try:
-            self.sock.connect((self.HOST, self.PORT))
+            self.sock.connect((self.HOST, 65432))
             #sent the init message
             self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
             #recieve data
@@ -215,9 +239,8 @@ class Client():
 
 if __name__=="__main__":
 
-    HOST = myLocalIP
-    PORT = myLocalPort
-    node = Client(HOST,PORT,"MULTI_ROTOR","cinderella")
+
+    node = Client("MULTI_ROTOR","cinderella")
     node.initVehicle()
     node.initConn()
 

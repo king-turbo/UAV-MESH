@@ -8,8 +8,8 @@ import select
 import multiprocessing as mp
 import time
 from datetime import datetime, timezone
-from userInterface import UI
-from oneskyapi import OneSkyAPI
+from user_interface import UI
+from onesky_api import OneSkyAPI
 import subprocess
 
 class VehicleClass:
@@ -45,8 +45,9 @@ class Server:
 
     '''
 
-    def __init__(self, HOST, PORT, oneskyAPI, inPipe, outPipe, utmUpdate = True, verbose = True):
+    def __init__(self, HOST, PORT, oneskyAPI, inPipe, outPipe, gcsName, utmUpdate = True, verbose = True):
 
+        self.gcsName = gcsName
         self.HOST = HOST
         self.PORT = PORT
         #the agent dictionary has the format: {nameOfClient : <VehicleClass>}
@@ -78,9 +79,12 @@ class Server:
             if data:
                 #decode data
                 _data = json.loads(data.decode("utf-8"))
+                if "$probe" in _data:
+                    print("hey")
+                    conn.sendall(self.probeReply())
 
                 #if the connection is new
-                if _data["name"] not in self.agents:
+                elif _data["name"] not in self.agents:
                     print("{} has connected at Lat:{}, Lon:{}, Alt:{}.".format(_data["name"],_data["lat"],_data["lon"],_data["alt"]))
                     #store the new connection name in the IP dictionary
                     self.ipDict[addr[0]] = _data["name"]
@@ -108,6 +112,9 @@ class Server:
                 self.clientHandler(conn, addr) #TODO: check for GUFI, remake if needed
         except:
             conn.close()
+
+    def probeReply(self):
+        return json.dumps({"GCS" : self.gcsName}).encode("utf-8")
 
     def createUTMPointFlight(self, name, lon, lat, alt):
         '''
@@ -258,12 +265,13 @@ if __name__=="__main__":
     #instantiate the UI with the pipes
     ui = UI(input_child_conn, output_parent_conn)
     #instantiate the server
-    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, utmUpdate = True, verbose=True,)
+    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn,"castle", utmUpdate = True, verbose=True, )
     #start the listening method with pipes
-    listenProc = mp.Process(target= queenB.listen, args=()).start()
+    listenProc = mp.Process(target= queenB.listen, args=())
+    listenProc.start()
     #
     ui.start()
-
+    listenProc.join()
 
 
     '''
