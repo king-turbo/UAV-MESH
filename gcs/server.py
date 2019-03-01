@@ -235,8 +235,8 @@ def getLocalIP(device=''):
                 return peripherals[2]
         if device == 'bat0':
             return peripherals[3]
-        if device == 'wlan0':
-            return peripherals[4]
+        if device == 'wlan':
+            return peripherals[5]
 
 
 
