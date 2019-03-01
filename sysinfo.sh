@@ -22,7 +22,7 @@ do
     fi
 done
 #Pull all the IP address 
-for conns in eth0 bat0 wlan0
+for conns in eth0 bat0 wlan0 wlp
 do
     address=$(ifconfig | grep -A1 $conns | grep inet | tr -d 'inet' | sed 's/.mask.*//' | tr -d  ' ')   
     if [ -z  $address ]; then
