@@ -72,6 +72,7 @@ class Server:
             _thread.start_new_thread(self.UTMTelemUpdate, ())
 
     def initializeNode(self, conn, addr):
+        print(addr)
         try:
             #receive data from socket
             data = conn.recv(1024)
@@ -79,9 +80,11 @@ class Server:
             if data:
                 #decode data
                 _data = json.loads(data.decode("utf-8"))
+                print(_data)
                 if "$probe" in _data:
                     print("hey")
                     conn.sendall(self.probeReply())
+                    conn.close()
 
                 #if the connection is new
                 elif _data["name"] not in self.agents:
@@ -101,7 +104,7 @@ class Server:
                 elif self.agents[_data["name"]].ip != addr[0]:
                     print("need a unique name")  #TODO: make a fancy exception thing
                     conn.close()
-                    return None
+                    
                 #if the vehicle's name is already stored and the IP addresses match, this means that
                 #the vehicle lost connection and reconnected
                 elif self.agents[_data["name"]].ip == addr[0]:
@@ -110,10 +113,13 @@ class Server:
                 a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
                 conn.sendall(a)
                 self.clientHandler(conn, addr) #TODO: check for GUFI, remake if needed
-        except:
+            return None
+        except Exception as e:
+            print(e)
             conn.close()
 
     def probeReply(self):
+        print("replying to probe")
         return json.dumps({"GCS" : self.gcsName}).encode("utf-8")
 
     def createUTMPointFlight(self, name, lon, lat, alt):
@@ -143,53 +149,70 @@ class Server:
         '''
         oPipe = False
         while True:
-
+            
             #This waits for data with a timeout of 2 seconds
+            
             r, _, _ = select.select([conn], [], [], 2)
+            
             #if there is data
             if r:
+                
                 data = conn.recv(1024)
+                
                 #I think there's a reason why there's this other if statement...?? TODO: test if this if is necessary
                 if data:
-                    _data = json.loads(data.decode("utf-8"))
-                    #The incoming data is in the form of a dictionary. The information from the client is
-                    #then stored in the vehicle object which is stored in the agent dictionary
-                    self.agents[self.ipDict[addr[0]]].lon = _data["lon"]
-                    self.agents[self.ipDict[addr[0]]].lat = _data["lat"]
-                    self.agents[self.ipDict[addr[0]]].alt = _data["alt"]
-                    self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
-                    self.agents[self.ipDict[addr[0]]].mode = _data["mode"]
+                   try:
+                       _data = json.loads(data.decode("utf-8"))
+                       
+                            #The incoming data is in the form of a dictionary. The information from the client is
+                        #then stored in the vehicle object which is stored in the agent dictionary
 
-                    #This next section of code will send instructions to the vehicle
+                       self.agents[self.ipDict[addr[0]]].lon = _data["lon"]
+                       self.agents[self.ipDict[addr[0]]].lat = _data["lat"]
+                       self.agents[self.ipDict[addr[0]]].alt = _data["alt"]
+                       self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
+                       self.agents[self.ipDict[addr[0]]].mode = _data["mode"]
 
-                    #if the incoming data does not ask to close the connection
-                    if "close connection" not in _data:
-                        #if there is data in the pipe from the user interface
-                        if self.outputPipe.poll():
-                            #read the data
-                            oPipe = self.outputPipe.recv()
-                        #is this if necessary? TODO: test if this if is necessary
-                        if oPipe:
-                            #The ipDict has the format {ipAddress : nameOfClient}, oPipe[0] should be the name of client
-                            #when a user enters "cinerella.rate.5", "cinderella" is oPipe[0]. if cinerella == the name
-                            #that this clientHandler is working with, then:
-                            if oPipe[0] == self.ipDict[addr[0]]:
-                                #send the remained of the message to the client, in the above example's case: "rate.5"
-                                self.replyMsg(conn, oPipe[1:])
-                            else:
-                                #This sends a 0 back to the client to let it know everything is OK! Maybe I should change
-                                #to a 1?
-                                self.replyMsg(conn, [0])
-                        else:
-                            # This isn't necessary TODO: fix this
-                            self.replyMsg(conn,[0])
-                    else:
-                        #client requested removal, remove
-                        print("Removed connection at Client's Request")
-                        del self.ipDict[addr[0]]
-                        conn.close()
-                        break
+                       #This next section of code will send instructions to the vehicle
 
+                       #if the incoming data does not ask to close the connection
+                       if "close connection" not in _data:
+                           #if there is data in the pipe from the user interface
+                           if self.outputPipe.poll():
+                               #read the data
+                               oPipe = self.outputPipe.recv()
+                           #is this if necessary? TODO: test if this if is necessary
+                           if oPipe:
+                               #The ipDict has the format {ipAddress : nameOfClient}, oPipe[0] should be the name of client
+                               #when a user enters "cinerella.rate.5", "cinderella" is oPipe[0]. if cinerella == the name
+                               #that this clientHandler is working with, then:
+                               if oPipe[0] == self.ipDict[addr[0]]:
+                                   #send the remained of the message to the client, in the above example's case: "rate.5"
+                                   self.replyMsg(conn, oPipe[1:])
+                               else:
+                                   #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
+                                   #to a 1?
+                                   
+                                   self.replyMsg(conn, [0])
+                                   
+                           else:
+                               
+                               self.replyMsg(conn,[0])
+                               
+                       else:
+                           #client requested removal, remove
+                           print("Removed connection at Client's Request")
+                           del self.ipDict[addr[0]]
+                           conn.close()
+                           break
+                   except Exception as e:
+                       print("threw an exception in data part")
+                       print(e)
+                       pass
+
+
+                else: #if no data
+                    print("no dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!!!!")
             else:
                 #if the connection has timed out, then remove it from the ipDict. #TODO: make sure this is what we want
                 print("removing connection")
@@ -198,9 +221,12 @@ class Server:
                 break
 
             #This sends the updated agents dictionary back to the user interface TODO: Is there a better way to do this?
-            self.inputPipe.send(self.agents)
+            
+            #self.inputPipe.send(self.agents)
+            
             oPipe = False
-
+            
+                  
     def replyMsg(self, conn, msg):
         #sends message to the client
         conn.sendall(json.dumps(msg).encode("utf-8"))
@@ -216,7 +242,7 @@ class Server:
         self.sock.listen(5)
         while True:
             conn, addr = self.sock.accept()
-            # conn.settimeout(3)
+           # conn.settimeout(1.4)
             if addr[0] not in self.ipDict:
                 _thread.start_new_thread(self.initializeNode, (conn, addr))
 
@@ -252,7 +278,8 @@ if __name__=="__main__":
 
     #Get the IP and Port of server from the localIP py file
 
-    HOST = getLocalIP()
+    HOST = getLocalIP(device="wlan")
+    print(HOST)
     PORT = 65432
 
     #These two pipes send data from the UI to the clientHandler server loop
