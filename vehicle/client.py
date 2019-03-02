@@ -1,5 +1,5 @@
 
-import sys
+import sys, getopt
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import socket
@@ -248,15 +248,50 @@ class Client():
         self.sock.close()
 
 
-if __name__=="__main__":
 
-    node = Client("MULTI_ROTOR","cinderella")
+def main(argv):
+    display = True
+    try:
+        opts, args = getopt.getopt(argv, "hn:d", ["help","name=","disableDisplay"])
+
+    except Exception as e:
+        print("-n <name> -d disables LED output")
+        print(e)
+        sys.exit()
+
+    name = None
+    for opt, arg in opts:
+        if opt == "-h":
+            print("-n <name> -d disables LED output")
+            sys.exit()
+        if opt in ('-n', "--name"):
+            name = arg
+        if opt in ('-d', "--disableDisplay"):
+            display = False
+            print("LED display is disabled")
+
+    if name == None:
+        print("must enter a name with -n")
+        sys.exit()
+
+
+    node = Client("MULTI_ROTOR", name, display)
     try:
         node.initVehicle()
         node.initConn()
+        sys.exit()
     except Exception as e:
         node.closeConnection()
         print(e)
+        sys.exit()
+
+
+
+if __name__=="__main__":
+
+    main(sys.argv[1:])
+
+
 
 
 

@@ -1,6 +1,6 @@
 import socket
 import json
-import sys
+import sys, getopt
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import _thread
@@ -240,11 +240,12 @@ class Server:
         '''
         print("Starting Server")
 
-
+        self.conns = []
         self.inputPipe.send('')
         self.sock.listen(5)
         while True:
             conn, addr = self.sock.accept()
+            self.conns.append(conn)
            # conn.settimeout(1.4)
             if addr[0] not in self.ipDict:
                 _thread.start_new_thread(self.initializeNode, (conn, addr))
@@ -300,11 +301,14 @@ if __name__=="__main__":
         #start the listening method with pipes
         listenProc = mp.Process(target= queenB.listen, args=())
         listenProc.start()
-        #
+
         ui.start()
         listenProc.join()
     except Exception as e:
-        queenB.sock.close()
+        for conn in queenB.conns:
+            conn.close()
+        queenB.closeConnection()
+        listenProc.join()
         print(e)
 
 
