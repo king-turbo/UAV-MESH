@@ -304,7 +304,7 @@ if __name__=="__main__":
         ui.start()
         listenProc.join()
     except Exception as e:
-        queenB.closeConnection()
+        queenB.sock.close()
         print(e)
 
 
