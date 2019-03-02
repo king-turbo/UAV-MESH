@@ -5,10 +5,11 @@ import json
 import select
 from multiprocessing import Pool
 import _thread
+import time
 
 
 
-class NodeCom:
+class NodeFinder:
 
     def __init__(self, localIP, name):
 
@@ -51,7 +52,6 @@ class NodeCom:
 
     def findNodes(self):
         newIPs = []
-        #this wont work
         a = ["nmap", "-sL", "192.168.254.*"]
         b = subprocess.check_output(a).decode("utf-8").strip()
         _ip = ''
@@ -68,35 +68,19 @@ class NodeCom:
                 _ip += char
             elif char == '(':
                 flag = True
+        #gets ride of "www.nmap.com" and "0 hosts up"
         del newIPs[0]
         del newIPs[-1]
+
         print (newIPs)
-        newNeighbors = []
 
-        def probe(ip):
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                try:
-                    s.settimeout(1)
-                    s.connect((ip, 65432))
-                    s.sendall(json.dumps({"$probe" : "UAV"}).encode("utf-8"))
-                    r, _, _ = select.select([s], [], [], .2)
-                    if r:
-                        data = json.loads(s.recv(1024).decode("utf-8"))
-                        print(data)
-                        newNeighbors.append([data, ip])
-
-                except:
-                    pass
-            s.close()
-
-
-        #TODO: make multiprocessing!!
-        for i in newIPs:
-            probe(i)
-
-
+        #multiprocessing to probe all the ips. makes it about 4x as fast
+        p = Pool(5)
+        newNeighbors = p.map(probe, newIPs)
+        print(newNeighbors)
         for neighbor in newNeighbors:
-            self.nodeList.append([neighbor[0],neighbor[1]])
+            if neighbor != None:
+                self.nodeList.append([neighbor[0],neighbor[1]])
 
     def returnGCS(self):
         _returnList = []
@@ -105,3 +89,24 @@ class NodeCom:
                                      #name of gcs   #ip
                 _returnList.append([node[0]["GCS"],node[1]])
         return _returnList
+
+
+
+
+def probe(ip):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.settimeout(1)
+            s.connect((ip, 65432))
+            s.sendall(json.dumps({"$probe": "UAV"}).encode("utf-8"))
+            r, _, _ = select.select([s], [], [], .2)
+            if r:
+                data = json.loads(s.recv(1024).decode("utf-8"))
+                print(data)
+                # newNeighbors.append([data, ip])
+
+                return [data, ip]
+
+        except:
+            pass
+    s.close()

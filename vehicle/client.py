@@ -8,7 +8,7 @@ import time
 from dronekit import Vehicle, connect
 import select
 import subprocess
-from node_com import NodeCom
+from node_com import NodeFinder
 import led_display
 
 
@@ -145,7 +145,7 @@ class Client():
                          "alt": self.alt}
 
     def findGCS(self):
-        self.nodeCom = NodeCom(self.ethernetIP, self.name)
+        self.nodeCom = NodeFinder(self.ethernetIP, self.name)
         self.nodeCom.findNodes()
         self.gcsList = self.nodeCom.returnGCS()
         print(self.gcsList)
@@ -189,7 +189,6 @@ class Client():
             self.initConn()
 
 
-
     def sendData(self):
         '''
         sendData handles information to and from the server once a connection has been made
@@ -204,7 +203,7 @@ class Client():
 
                 self.sock.sendall(json.dumps(self.sendDict).encode("utf-8"))
 
-                #wait for a response from server
+                                                          #DANGER! DANGER!: make sure the timeout is > than update rate
                 r, _, _ = select.select([self.sock],[],[], 2/self.updateRate)
                 #if there is a response
                 if r:
