@@ -53,18 +53,17 @@ class Client():
     
     '''
 
-    def __init__(self, type, name, allowLED = False):
+    def __init__(self, type, name, allowLED = True):
 
         self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.settimeout(1.4)
         self.initMsgFrmClient = {"type" : type, "name" : name}
         self.status = "default"
         self.updateRate = 5
         self.sending = True
         self.name = name
         self.type = type
-
 
     def initVehicle(self):
         '''
@@ -107,6 +106,7 @@ class Client():
                 self.initMsgFrmClient["alt"] = 0
                 print("GPS lock is bad")
 
+
         except:
             if self.allowDisplay:
                 self.ui.loadFlag = False
@@ -122,6 +122,8 @@ class Client():
 
         if self.allowDisplay:
             self.ui.displayMode = "status"
+
+        self.findGCS()
 
 
     def update(self):
@@ -154,7 +156,6 @@ class Client():
             self.HOST = self.gcsList[0][1]
 
 
-
     def initConn(self):
 
         '''
@@ -162,8 +163,6 @@ class Client():
         '''
         #connect to the server
 
-
-        self.findGCS()
 
         try:
             self.sock.connect((self.HOST, 65432))
@@ -176,6 +175,7 @@ class Client():
             _data = json.loads(data.decode("utf-8"))
             #change the updateRate to whatever the server requests
             self.updateRate = _data["freq"]
+            #change mode to what the server requests
             #change mode to what the server requests
             self.mode = _data["mode"]
             #if the mode is in default
@@ -201,48 +201,64 @@ class Client():
                 #get updates from the flight controller
                 self.update()
                 #convert to JSON and send to server
+
                 self.sock.sendall(json.dumps(self.sendDict).encode("utf-8"))
+
                 #wait for a response from server
-                r, _, _ = select.select([self.sock],[],[], .2)
+                r, _, _ = select.select([self.sock],[],[], 2/self.updateRate)
                 #if there is a response
                 if r:
                     #recieve the data
                     data = self.sock.recv(1024)
                     print(data)
                     #decode the data
-                    _data = json.loads(data.decode("utf-8"))
-                    #Add configurable stuff here. for example if you wanted to be able to control X on the client side, if _data[0]== 'X':
-                    #                                                                                                       self.X = int(_data[1])
-                    if _data[0] == 'rate':
-                        self.updateRate = int(_data[1])
-                        
+                    try:
+                        _data = json.loads(data.decode("utf-8"))
+                        #Add configurable stuff here. for example if you wanted to be able to control X on the client side, if _data[0]== 'X':
+                        #                                                                                                       self.X = int(_data[1])
+                        if _data[0] == 'rate':
+                            self.updateRate = int(_data[1])
+                    except:
+                        print("data issues")
+                        pass
 
                 #get the loop time        
-                toc=  time.time() - tic
-                time.sleep((1 / self.updateRate)  - toc)
+                toc =  time.time() - tic
+                #try and except is due to
+                try:
+                    time.sleep((1 / self.updateRate)  - toc)
+                except:
 
+                    pass
+
+            except BrokenPipeError:
+                print("Connection Reset... Reconnecting\n")
+                self.closeConnection()
+                time.sleep(2.2)
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.initConn()
             except KeyboardInterrupt:
                 self.closeConnection()
 
             except ConnectionResetError:
                 print("Connection Reset... Reconnecting\n")
                 self.closeConnection()
-                time.sleep(2)
+                time.sleep(2.2)
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.initConn()
-                break
+
 
     def closeConnection(self):
-
         self.sock.close()
 
 
 if __name__=="__main__":
 
-
     node = Client("MULTI_ROTOR","cinderella")
     node.initVehicle()
     node.initConn()
+
+
 
 
    #TODO: create static /dev/tty (done! not static ttyACM, instead search for which ACM has the FC)
