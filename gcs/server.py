@@ -222,7 +222,7 @@ class Server:
 
             #This sends the updated agents dictionary back to the user interface TODO: Is there a better way to do this?
             
-            #self.inputPipe.send(self.agents)
+            self.inputPipe.send(self.agents)
             
             oPipe = False
             

@@ -220,14 +220,11 @@ class Client():
                     except:
                         print("data issues")
                         pass
-
-                #get the loop time        
                 toc =  time.time() - tic
                 #try and except is due to
                 try:
                     time.sleep((1 / self.updateRate)  - toc)
                 except:
-
                     pass
 
             except BrokenPipeError:
