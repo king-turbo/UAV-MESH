@@ -255,8 +255,12 @@ class Client():
 if __name__=="__main__":
 
     node = Client("MULTI_ROTOR","cinderella")
-    node.initVehicle()
-    node.initConn()
+    try:
+        node.initVehicle()
+        node.initConn()
+    except Exception as e:
+        node.closeConnection()
+        print(e)
 
 
 

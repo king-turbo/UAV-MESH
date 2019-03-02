@@ -231,6 +231,9 @@ class Server:
         #sends message to the client
         conn.sendall(json.dumps(msg).encode("utf-8"))
 
+    def closeConnection(self):
+        self.sock.close()
+
     def listen(self):
         '''
         First method that is ran. Spawns new threads for each client.
@@ -292,13 +295,17 @@ if __name__=="__main__":
     #instantiate the UI with the pipes
     ui = UI(input_child_conn, output_parent_conn)
     #instantiate the server
-    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn,"castle", utmUpdate = True, verbose=True, )
-    #start the listening method with pipes
-    listenProc = mp.Process(target= queenB.listen, args=())
-    listenProc.start()
-    #
-    ui.start()
-    listenProc.join()
+    try:
+        queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn,"castle", utmUpdate = True, verbose=True, )
+        #start the listening method with pipes
+        listenProc = mp.Process(target= queenB.listen, args=())
+        listenProc.start()
+        #
+        ui.start()
+        listenProc.join()
+    except Exception as e:
+        queenB.closeConnection()
+        print(e)
 
 
     '''

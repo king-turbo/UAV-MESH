@@ -19,7 +19,7 @@ class NodeCom:
         self.REQUEST_PROBE = {"$probe" : "UAV"}
         self.probe_REPLY = {name: "UAV"}
 
-        self.initListenSocket()
+        # self.initListenSocket()
 
     def initListenSocket(self):
 
@@ -59,20 +59,24 @@ class NodeCom:
         for char in b:
             if char == ')':
                 flag = False
-            elif flag == True:
-                _ip += char
-            elif char == '(':
-                flag = True
                 if any(_ip in addr for addr in self.nodeList):
                     pass
                 else:
                     newIPs.append(_ip)
                 _ip = ''
+            elif flag == True:
+                _ip += char
+            elif char == '(':
+                flag = True
         del newIPs[0]
+        del newIPs[-1]
+        print (newIPs)
         newNeighbors = []
+
         def probe(ip):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 try:
+                    s.settimeout(1)
                     s.connect((ip, 65432))
                     s.sendall(json.dumps({"$probe" : "UAV"}).encode("utf-8"))
                     r, _, _ = select.select([s], [], [], .2)
@@ -80,15 +84,17 @@ class NodeCom:
                         data = json.loads(s.recv(1024).decode("utf-8"))
                         print(data)
                         newNeighbors.append([data, ip])
+
                 except:
                     pass
+            s.close()
 
 
         #TODO: make multiprocessing!!
         for i in newIPs:
             probe(i)
 
-        print(newNeighbors)
+
         for neighbor in newNeighbors:
             self.nodeList.append([neighbor[0],neighbor[1]])
 
