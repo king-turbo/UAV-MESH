@@ -53,17 +53,17 @@ class Client():
     
     '''
 
-    def __init__(self, type, name, allowLED = True):
+    def __init__(self, vehicleType, name, allowLED = True):
 
         self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(1.4)
-        self.initMsgFrmClient = {"type" : type, "name" : name}
+        self.initMsgFrmClient = {"$connect": 1, "type" : vehicleType, "name" : name}
         self.status = "default"
         self.updateRate = 5
         self.sending = True
         self.name = name
-        self.type = type
+        self.vehicleType = vehicleType
 
     def initVehicle(self):
         '''
@@ -123,10 +123,14 @@ class Client():
         if self.allowDisplay:
             self.ui.displayMode = "status"
 
+
+    def initV2V(self):
+        self.nodeCom = NodeFinder(self.ethernetIP, self.name, self.vehicleType)
+        self.nodeCom.initListenSocket()
         self.findGCS()
 
-
     def update(self):
+        print(self.nodeCom.uavDict)
 
         '''
         This method gets updates from the flight controller and stores the new GPS values in lon,lat,alt.
@@ -145,12 +149,11 @@ class Client():
                          "alt": self.alt}
 
     def findGCS(self):
-        self.nodeCom = NodeFinder(self.ethernetIP, self.name)
         self.nodeCom.findNodes()
         self.gcsList = self.nodeCom.returnGCS()
-        print(self.gcsList)
         if not self.gcsList:
-            print("empty")
+            #TODO: need to try to connect again if gcslist is empty
+            print("gcs list empty")
         #TODO: need to make the user select which GCS from the LED display
         else:
             self.HOST = self.gcsList[0][1]
@@ -278,6 +281,7 @@ def main(argv):
     node = Client("MULTI_ROTOR", name, display)
     try:
         node.initVehicle()
+        node.initV2V()
         node.initConn()
         sys.exit()
     except Exception as e:

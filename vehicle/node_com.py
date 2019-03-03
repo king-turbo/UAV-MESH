@@ -11,15 +11,20 @@ import time
 
 class NodeFinder:
 
-    def __init__(self, localIP, name):
+    def __init__(self, localIP, name, vehicleType):
 
         self.HOST = localIP
-        self.nodeList = []
+        self.gcsList = []
+        self.nodeList = [[{"fakename":"dummy"},"111.111.111.111"]]
         self.PORT = 65432  # all "server" sockets will have 33333
         self.name = name
+        self.vehicletype = vehicleType
         self.REQUEST_PROBE = {"$probe" : "UAV"}
-        self.probe_REPLY = {name: "UAV"}
+        self.PROBE_REPLY = {"UAV" : name}
+        self.initConnToUav = {"$connect" : 1, "type": vehicleType, "name" : name}
 
+        self.uavDict = {}
+        self.listeningSockets = []
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -27,6 +32,7 @@ class NodeFinder:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.HOST, self.PORT))
+        _thread.start_new_thread(self.listen, ())
 
 
     def listen(self):
@@ -34,18 +40,31 @@ class NodeFinder:
         self.sock.listen(5)
         while True:
             conn, addr = self.sock.accept()
-            if addr[0] not in self.nodeList[1]:
-                _thread.start_new_thread(self.talkToNode, (conn, addr))
 
-    def talkToNode(self, conn, addr):
+            _thread.start_new_thread(self.talkToNewNode, (conn, addr))
+
+    def talkToNewNode(self, conn, addr):
+        print("NEW NODE!!")
         try:
             data = conn.recv(1024)
             if data:
                 _data = json.loads(data.decode("utf-8"))
                 if "$probe" in _data:
                     conn.sendall(self.probeReply())
+                    conn.close()
+                if "$connect" in _data:
+                    print("something tried to connect")
+                    conn.sendall(self.successConnReply())
+                    self.listeningSockets.append(conn, addr)
+                    pass
         except:
             pass
+
+
+    # def nodeHandler(self):
+    #
+    def successConnReply(self):
+        return json.dumps({"$success": 1}).encode("utf-8")
 
     def probeReply(self):
         return json.dumps({"UAV" : self.name}).encode("utf-8")
@@ -61,39 +80,61 @@ class NodeFinder:
                 flag = False
                 if any(_ip in addr for addr in self.nodeList):
                     pass
-                else:
+                elif _ip != self.HOST:
                     newIPs.append(_ip)
                 _ip = ''
             elif flag == True:
                 _ip += char
             elif char == '(':
                 flag = True
-        #gets ride of "www.nmap.com" and "0 hosts up"
+        #gets rid of "www.nmap.com" and "0 hosts up"
         del newIPs[0]
         del newIPs[-1]
 
-        print (newIPs)
 
         #multiprocessing to probe all the ips. makes it about 4x as fast
         p = Pool(5)
         newNeighbors = p.map(probe, newIPs)
-        print(newNeighbors)
+
         for neighbor in newNeighbors:
             if neighbor != None:
-                self.nodeList.append([neighbor[0],neighbor[1]])
+                                       #nodetype        #ip
+                if "GCS" in neighbor[0]:
+                    self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
+                    self.nodeList.append([neighbor[0]["GCS"],neighbor[1]])
+                if "UAV" in neighbor[0]:
+                    print("neighbor1")
+                    success, sock = self.connect2UAV(neighbor[1])
+                    #connect to the new UAVs
+                    #if succesfully connected, then append to nodelist
+
+                    if success:
+                        self.nodeList.append([neighbor[0]["UAV"],neighbor[1]])
+                        self.uavDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
+
+    def connect2UAV(self,ip):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((ip, 65432))
+        sock.sendall(json.dumps(self.initConnToUav).encode("utf-8"))
+
+        r, _, _ = select.select([sock], [], [], .5)
+        if r:
+            data = json.loads(sock.recv(1024).decode("utf-8"))
+            if "$success" in data:
+                return True, sock
+            else:
+                sock.close()
+                return False, 0
+
+        
 
     def returnGCS(self):
-        _returnList = []
-        for node in self.nodeList:
-            if "GCS" in node[0]:
-                                     #name of gcs   #ip
-                _returnList.append([node[0]["GCS"],node[1]])
-        return _returnList
 
-
+        return self.gcsList
 
 
 def probe(ip):
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.settimeout(1)

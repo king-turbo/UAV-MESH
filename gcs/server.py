@@ -86,33 +86,36 @@ class Server:
                     conn.sendall(self.probeReply())
                     conn.close()
 
-                #if the connection is new
-                elif _data["name"] not in self.agents:
-                    print("{} has connected at Lat:{}, Lon:{}, Alt:{}.".format(_data["name"],_data["lat"],_data["lon"],_data["alt"]))
-                    #store the new connection name in the IP dictionary
-                    self.ipDict[addr[0]] = _data["name"]
-                    #also store the new connetion's name in the agents dictionary. the key is the name and the value is
-                    #the vehicle class object. This allows for easy vehicle look ups
-                    self.agents[_data["name"]] = (VehicleClass(_data["name"], addr[0], _data["type"]))
+                elif "$connect" in _data:
+                    #if the connection is new
+                    if _data["name"] not in self.agents:
+                        print("{} has connected at Lat:{}, Lon:{}, Alt:{}.".format(_data["name"],_data["lat"],_data["lon"],_data["alt"]))
+                        #store the new connection name in the IP dictionary
+                        self.ipDict[addr[0]] = _data["name"]
+                        #also store the new connetion's name in the agents dictionary. the key is the name and the value is
+                        #the vehicle class object. This allows for easy vehicle look ups
+                        self.agents[_data["name"]] = (VehicleClass(_data["name"], addr[0], _data["type"]))
 
-                    #if we are updated to the UTM
-                    if self.utmUpdate:
-                        #then create a new point flight to the UTM system
-                        self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
-                #if the connection's name exists, but the IP addresses are the same, then this is indicative of
-                #two vehicles operating with the same name. The connection is closed.
-                elif self.agents[_data["name"]].ip != addr[0]:
-                    print("need a unique name")  #TODO: make a fancy exception thing
+                        #if we are updated to the UTM
+                        if self.utmUpdate:
+                            #then create a new point flight to the UTM system
+                            self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
+                    #if the connection's name exists, but the IP addresses are the same, then this is indicative of
+                    #two vehicles operating with the same name. The connection is closed.
+                    elif self.agents[_data["name"]].ip != addr[0]:
+                        print("need a unique name")  #TODO: make a fancy exception thing
+                        conn.close()
+
+                    #if the vehicle's name is already stored and the IP addresses match, this means that
+                    #the vehicle lost connection and reconnected
+                    elif self.agents[_data["name"]].ip == addr[0]:
+                        print("{} has reconnected.".format(_data["name"]))
+                        self.ipDict[addr[0]] = _data["name"]
+                    a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
+                    conn.sendall(a)
+                    self.clientHandler(conn, addr) #TODO: check for GUFI, remake if needed
+                else:
                     conn.close()
-                    
-                #if the vehicle's name is already stored and the IP addresses match, this means that
-                #the vehicle lost connection and reconnected
-                elif self.agents[_data["name"]].ip == addr[0]:
-                    print("{} has reconnected.".format(_data["name"]))
-                    self.ipDict[addr[0]] = _data["name"]
-                a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
-                conn.sendall(a)
-                self.clientHandler(conn, addr) #TODO: check for GUFI, remake if needed
             return None
         except Exception as e:
             print(e)
@@ -158,8 +161,7 @@ class Server:
             if r:
                 
                 data = conn.recv(1024)
-                
-                #I think there's a reason why there's this other if statement...?? TODO: test if this if is necessary
+
                 if data:
                    try:
                        _data = json.loads(data.decode("utf-8"))
