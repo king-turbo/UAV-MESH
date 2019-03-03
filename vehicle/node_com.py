@@ -53,10 +53,18 @@ class NodeFinder:
                     conn.sendall(self.probeReply())
                     conn.close()
                 if "$connect" in _data:
-                    print("something tried to connect")
+                    print("we are in connecting!")
                     conn.sendall(self.successConnReply())
-                    self.listeningSockets.append(conn, addr)
-                    pass
+                    print("we have replied")
+                    self.listeningSockets.append([conn, addr])
+                    print(_data)
+                    if _data["name"] not in self.uavDict:
+                        success, sock = self.connect2UAV(addr[0])
+                        print(success)
+                        if success:
+                            self.uavDict[_data["name"]] = [addr[0], sock]
+                            self.nodeList.append([_data["name"], addr[0]])
+
         except:
             pass
 
@@ -103,11 +111,9 @@ class NodeFinder:
                     self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
                     self.nodeList.append([neighbor[0]["GCS"],neighbor[1]])
                 if "UAV" in neighbor[0]:
-                    print("neighbor1")
                     success, sock = self.connect2UAV(neighbor[1])
                     #connect to the new UAVs
                     #if succesfully connected, then append to nodelist
-
                     if success:
                         self.nodeList.append([neighbor[0]["UAV"],neighbor[1]])
                         self.uavDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
@@ -117,7 +123,7 @@ class NodeFinder:
         sock.connect((ip, 65432))
         sock.sendall(json.dumps(self.initConnToUav).encode("utf-8"))
 
-        r, _, _ = select.select([sock], [], [], .5)
+        r, _, _ = select.select([sock], [], [], 2)
         if r:
             data = json.loads(sock.recv(1024).decode("utf-8"))
             if "$success" in data:
