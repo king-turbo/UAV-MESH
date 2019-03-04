@@ -6,7 +6,7 @@ import select
 from multiprocessing import Pool
 import _thread
 import time
-
+from gcs.server import VehicleClass as vc
 
 
 class NodeFinder:
@@ -18,13 +18,14 @@ class NodeFinder:
         self.nodeList = [[{"fakename":"dummy"},"111.111.111.111"]]
         self.PORT = 65432  # all "server" sockets will have 33333
         self.name = name
-        self.vehicletype = vehicleType
+        self.vehicleType = vehicleType
         self.REQUEST_PROBE = {"$probe" : "UAV"}
         self.PROBE_REPLY = {"UAV" : name}
         self.initConnToUav = {"$connect" : 1, "type": vehicleType, "name" : name}
 
-        self.uavDict = {}
+        self.uavOutgoingSocketDict = {}
         self.listeningSockets = []
+        self.uavs = {}
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -56,14 +57,23 @@ class NodeFinder:
                     print("we are in connecting!")
                     conn.sendall(self.successConnReply())
                     print("we have replied")
+                    #incoming socks
                     self.listeningSockets.append([conn, addr])
+                    _thread.start_new_thread(self.listenToVehicle, (conn, _data["name"],addr[0],_data["type"]))
                     print(_data)
-                    if _data["name"] not in self.uavDict:
+                    if _data["name"] not in self.uavOutgoingSocketDict:
+                        #outgoing socks
                         success, sock = self.connect2UAV(addr[0])
                         print(success)
                         if success:
-                            self.uavDict[_data["name"]] = [addr[0], sock]
-                            self.nodeList.append([_data["name"], addr[0]])
+                                                                #outgoing
+                            self.uavOutgoingSocketDict[_data["name"]] = [addr[0], sock]
+                            if _data["name"] not in self.nodeList:
+                                self.nodeList.append([_data["name"], addr[0]])
+
+
+                                #this means i will need to remove key-value pair if outgoing sock is lost
+                                #also need to remove name in nodeList if disconnected
 
         except:
             pass
@@ -106,7 +116,7 @@ class NodeFinder:
 
         for neighbor in newNeighbors:
             if neighbor != None:
-                                       #nodetype        #ip
+                                       #node name       #ip
                 if "GCS" in neighbor[0]:
                     self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
                     self.nodeList.append([neighbor[0]["GCS"],neighbor[1]])
@@ -115,8 +125,10 @@ class NodeFinder:
                     #connect to the new UAVs
                     #if succesfully connected, then append to nodelist
                     if success:
-                        self.nodeList.append([neighbor[0]["UAV"],neighbor[1]])
-                        self.uavDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
+                        if neighbor[0]["UAV"] not in self.nodeList:
+                            self.nodeList.append([neighbor[0]["UAV"],neighbor[1]])
+                                                                #outgoing
+                        self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
 
     def connect2UAV(self,ip):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -137,6 +149,53 @@ class NodeFinder:
     def returnGCS(self):
 
         return self.gcsList
+
+    def msgAllUavs(self, lat, lon, alt, heading, **kwargs):
+        msg = ({"name": self.name,
+                 "vehicleType" : self.vehicleType,
+                "lat" : lat,
+                "lon": lon,
+                "alt": alt,
+                "heading": heading,
+                **kwargs})
+
+        #maybe do this multiprocessing?
+        for node in self.uavOutgoingSocketDict:
+            sock=self.uavOutgoingSocketDict[node][1]
+            sock.sendall(json.dumps(msg).encode("utf-8"))
+
+    def listenToVehicle(self,conn, name, ip, vehicleType):
+
+        self.uavs[name] = vc(name,ip, vehicleType)
+        while True:
+
+            # This waits for data with a timeout of 2 seconds
+
+            r, _, _ = select.select([conn], [], [], 2)
+
+            # if there is data
+            if r:
+
+                data = conn.recv(1024)
+
+                if data:
+                    try:
+                        _data = json.loads(data.decode("utf-8"))
+
+                        self.uavs[name].lon = _data["lon"]
+                        self.uavs[name].lat = _data["lat"]
+                        self.uavs[name].alt = _data["alt"]
+                        self.uavs[name].heading  = _data["heading"]
+                    except Exception as e:
+                        print("exception occured in listenToVehicle method")
+                        print(e)
+                        pass
+
+
+
+
+
+
 
 
 def probe(ip):

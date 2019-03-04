@@ -8,9 +8,9 @@ import time
 from dronekit import Vehicle, connect
 import select
 import subprocess
-from node_com import NodeFinder
-import led_display
-
+from vehicle.node_com import NodeFinder
+from vehicle import led_display
+import _thread
 
 
 class Drone(Vehicle):
@@ -64,6 +64,7 @@ class Client():
         self.sending = True
         self.name = name
         self.vehicleType = vehicleType
+        self.heading= 0
 
     def initVehicle(self):
         '''
@@ -122,15 +123,30 @@ class Client():
 
         if self.allowDisplay:
             self.ui.displayMode = "status"
+            self.ui.displayMode = "status"
 
 
     def initV2V(self):
         self.nodeCom = NodeFinder(self.ethernetIP, self.name, self.vehicleType)
         self.nodeCom.initListenSocket()
         self.findGCS()
+        self.neighborHandler()
+
+
+
+
+    def neighborHandler(self):
+
+        def loop():
+            while True:
+                self.nodeCom.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
+                time.sleep(1)
+                print(self.nodeCom.uavs)
+
+        _thread.start_new_thread(loop, ())
 
     def update(self):
-        print(self.nodeCom.uavDict)
+
 
         '''
         This method gets updates from the flight controller and stores the new GPS values in lon,lat,alt.
@@ -166,7 +182,6 @@ class Client():
         '''
         #connect to the server
 
-
         try:
             self.sock.connect((self.HOST, 65432))
             #sent the init message
@@ -185,6 +200,7 @@ class Client():
             if _data["mode"] == "default":
                 #then send data
                 self.sendData()
+
         except ConnectionResetError:                            #TODO: Figure out exception for timeout error and
                                                                 #TODO: whether or not to have separate method for reconnecting
             print("Connection Reset... Reconnecting\n")
@@ -282,6 +298,7 @@ def main(argv):
     try:
         node.initVehicle()
         node.initV2V()
+        # _thread.start_new_thread(node.neighborHandler(), ())
         node.initConn()
         sys.exit()
     except Exception as e:

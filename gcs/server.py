@@ -8,8 +8,8 @@ import select
 import multiprocessing as mp
 import time
 from datetime import datetime, timezone
-from user_interface import UI
-from onesky_api import OneSkyAPI
+from gcs.user_interface import UI
+from gcs.onesky_api import OneSkyAPI
 import subprocess
 
 class VehicleClass:
@@ -31,6 +31,7 @@ class VehicleClass:
         self.lon = 0
         self.alt = 0
         self.GUFI = ''
+        self.heading = 0
 
 
 
@@ -138,6 +139,7 @@ class Server:
         This runs on a separate thread. It updates telemetry to the UTM
         '''
         while True:
+
             for agent in self.agents:
                 try:
                     self.utm.updateTelemetry(self.agents[agent].GUFI, self.agents[agent].lon, self.agents[agent].lat, self.agents[agent].alt)
@@ -256,7 +258,7 @@ def getLocalIP(device=''):
 
     if os.name == 'nt':
         return socket.gethostbyname(socket.gethostname())
-    if os.name =='posix':
+    if os.name == 'posix':
         subprocess.call(['.././sysinfo.sh'])
         time.sleep(.00001)
         peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
