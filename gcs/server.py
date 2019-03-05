@@ -81,9 +81,9 @@ class Server:
             if data:
                 #decode data
                 _data = json.loads(data.decode("utf-8"))
-                print(_data)
+
                 if "$probe" in _data:
-                    print("hey")
+
                     conn.sendall(self.probeReply())
                     conn.close()
 
@@ -104,13 +104,13 @@ class Server:
                     #if the connection's name exists, but the IP addresses are the same, then this is indicative of
                     #two vehicles operating with the same name. The connection is closed.
                     elif self.agents[_data["name"]].ip != addr[0]:
-                        print("need a unique name")  #TODO: make a fancy exception thing
+                        print("\nneed a unique name")  #TODO: make a fancy exception thing
                         conn.close()
 
                     #if the vehicle's name is already stored and the IP addresses match, this means that
                     #the vehicle lost connection and reconnected
                     elif self.agents[_data["name"]].ip == addr[0]:
-                        print("{} has reconnected.".format(_data["name"]))
+                        print("\n{} has reconnected.".format(_data["name"]))
                         self.ipDict[addr[0]] = _data["name"]
                     a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
                     conn.sendall(a)
@@ -123,7 +123,7 @@ class Server:
             conn.close()
 
     def probeReply(self):
-        print("replying to probe")
+        print("\nreplying to probe")
         return json.dumps({"GCS" : self.gcsName}).encode("utf-8")
 
     def createUTMPointFlight(self, name, lon, lat, alt):
@@ -145,6 +145,8 @@ class Server:
                     self.utm.updateTelemetry(self.agents[agent].GUFI, self.agents[agent].lon, self.agents[agent].lat, self.agents[agent].alt)
                 except:
                     pass
+
+        #TODO: Add a way to handle onesky replys
 
     def clientHandler(self, conn, addr):
         '''
@@ -192,6 +194,7 @@ class Server:
                                #that this clientHandler is working with, then:
                                if oPipe[0] == self.ipDict[addr[0]]:
                                    #send the remained of the message to the client, in the above example's case: "rate.5"
+                                   print(oPipe[1:])
                                    self.replyMsg(conn, oPipe[1:])
                                else:
                                    #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
@@ -219,7 +222,7 @@ class Server:
                     print("no dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!!!!")
             else:
                 #if the connection has timed out, then remove it from the ipDict. #TODO: make sure this is what we want
-                print("removing connection")
+                print("\nremoving connection")
                 conn.close()
                 del self.ipDict[addr[0]]
                 break
@@ -242,7 +245,7 @@ class Server:
         '''
         First method that is ran. Spawns new threads for each client.
         '''
-        print("Starting Server")
+        print("\nStarting Server")
 
         self.conns = []
         self.inputPipe.send('')
@@ -308,11 +311,13 @@ if __name__=="__main__":
 
         ui.start()
         listenProc.join()
+
     except Exception as e:
         for conn in queenB.conns:
             conn.close()
         queenB.closeConnection()
         listenProc.join()
+
         print(e)
 
 

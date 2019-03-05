@@ -8,7 +8,7 @@ import time
 from dronekit import Vehicle, connect
 import select
 import subprocess
-from vehicle.node_com import NodeFinder
+from vehicle.v2v import V2V
 from vehicle import led_display
 import _thread
 
@@ -127,21 +127,18 @@ class Client():
 
 
     def initV2V(self):
-        self.nodeCom = NodeFinder(self.ethernetIP, self.name, self.vehicleType)
-        self.nodeCom.initListenSocket()
+        self.v2vComms = V2V(self.ethernetIP, self.name, self.vehicleType)
+        self.v2vComms.initListenSocket()
         self.findGCS()
         self.neighborHandler()
-
-
-
 
     def neighborHandler(self):
 
         def loop():
             while True:
-                self.nodeCom.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
+                self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
                 time.sleep(1)
-                print(self.nodeCom.uavs)
+                print(self.v2vComms.uavs)
 
         _thread.start_new_thread(loop, ())
 
@@ -165,8 +162,8 @@ class Client():
                          "alt": self.alt}
 
     def findGCS(self):
-        self.nodeCom.findNodes()
-        self.gcsList = self.nodeCom.returnGCS()
+        self.v2vComms.findNodes()
+        self.gcsList = self.v2vComms.returnGCS()
         if not self.gcsList:
             #TODO: need to try to connect again if gcslist is empty
             print("gcs list empty")
