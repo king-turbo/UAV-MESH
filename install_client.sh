@@ -6,7 +6,7 @@
 ##It will install all the necessities to run the client
 NEWHOSTNAME=$1
 
-sudo sed -i "1s/.*/$NEWHOSTNAME" /etc/hostname
+sudo sed -i "1s/.*/$NEWHOSTNAME/" /etc/hostname
 sudo apt-get purge wolfram-engine
 sudo apt-get upgrade
 sudo apt-get dist-upgrade
