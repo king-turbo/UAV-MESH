@@ -6,12 +6,11 @@
 ##It will install all the necessities to run the client
 NEWHOSTNAME=$1
 
-sudo sed -e '1d' /etc/hostname
-sudo echo >> /etc/hostname $NEWHOSTNAME
+sudo sed -i "1s/.*/$NEWHOSTNAME" /etc/hostname
 sudo apt-get purge wolfram-engine
 sudo apt-get upgrade
 sudo apt-get dist-upgrade
-
+sudo setxkbmap us
 sudo apt-get install python-dev
 sudo apt-get install libxml2
 sudo apt-get install libxml2-dev libxslt-dev
