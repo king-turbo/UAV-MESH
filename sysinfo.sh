@@ -32,3 +32,5 @@ do
     fi
 done
 
+echo hostname >> "sysdisc.txt"
+

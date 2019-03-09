@@ -58,13 +58,24 @@ class Client():
         self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(1.4)
-        self.initMsgFrmClient = {"$connect": 1, "type" : vehicleType, "name" : name}
+
         self.status = "default"
         self.updateRate = 5
         self.sending = True
-        self.name = name
+
         self.vehicleType = vehicleType
         self.heading= 0
+
+        if name == None:
+            print("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
+            self.name = socket.gethostname()
+            print(self.name)
+        else:
+            self.name = name
+
+        self.initMsgFrmClient = {"$connect": 1, "type": vehicleType, "name": self.name}
+
+
 
     def initVehicle(self):
         '''
@@ -287,8 +298,8 @@ def main(argv):
             print("LED display is disabled")
 
     if name == None:
-        print("must enter a name with -n")
-        sys.exit()
+        print("Using hostname as UAV name!")
+
 
 
     node = Client("MULTI_ROTOR", name, display)
@@ -311,7 +322,7 @@ if __name__=="__main__":
 
 
 
-
+#TODO: i2c exception handling
 
 
    #TODO: create static /dev/tty (done! not static ttyACM, instead search for which ACM has the FC)

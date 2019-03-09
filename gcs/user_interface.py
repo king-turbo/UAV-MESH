@@ -18,7 +18,7 @@ class UI:
 
         while True:
 
-            self.userInput = input("gcs1 ~:")
+            self.userInput = input()
 
 
     def commandLoop(self):
