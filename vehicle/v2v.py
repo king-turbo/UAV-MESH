@@ -59,6 +59,7 @@ class V2V:
                     print("we have replied")
                     #incoming socks
                     self.listeningSockets.append([conn, addr])
+                    #need to rearrange this.... maybe?
                     _thread.start_new_thread(self.listenToVehicle, (conn, _data["name"],addr[0],_data["type"]))
                     print(_data)
                     if _data["name"] not in self.uavOutgoingSocketDict:

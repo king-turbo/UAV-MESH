@@ -2,6 +2,7 @@
 
 import requests
 from datetime import datetime, timezone
+import json
 
 class OneSkyAPI:
 
@@ -75,4 +76,25 @@ class OneSkyAPI:
         response = self.session.post(url, data=data, stream=True)
 
 
+    def listFlights(self):
+        url = 'https://utm.onesky.xyz/api/flights/'
+        response = self.session.get(url, stream=True)
+        return json.loads(response.content.decode('utf-8'))
 
+    def deleteFlight(self, GUFI):
+        url='https://utm.onesky.xyz/api/flights/' + GUFI
+        response = self.session.delete(url,  stream=True)
+        return response
+
+if __name__=="__main__":
+
+    with open("mwalton.token", "r") as toke:
+        token = toke.read()
+
+        utm = OneSkyAPI(token)
+        flights = utm.listFlights()
+
+        gufis = [g["id"] for g in flights]
+
+        for g in gufis:
+            utm.deleteFlight(g)

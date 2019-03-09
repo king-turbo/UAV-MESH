@@ -13,7 +13,7 @@ from vehicle import led_display
 import _thread
 
 
-class Drone(Vehicle):
+class UAV(Vehicle):
     '''
     This class inherets from the dronekit Vehicle class. The dronekit library is a super easy way to
     communicate with the flight controller on the UAV
@@ -21,7 +21,7 @@ class Drone(Vehicle):
 
     def __init__(self, *args):
 
-        super(Drone, self).__init__(*args)
+        super(UAV, self).__init__(*args)
         self.sendDict = {}
 
     def toJSON(self):
@@ -87,8 +87,8 @@ class Client():
 
             #calls connect method from dronekit library, #TODO: need to set /dev/ttyACM to static (this is fixed?)
                                                          #TODO: need to make a thing for other types of flight controllers
-            time.sleep(5)
-            self.uav = connect(self.peripherals[0], wait_ready=True, vehicle_class=Drone)
+            time.sleep(1)
+            self.uav = connect(self.peripherals[0], wait_ready=True, vehicle_class=UAV)
             #call the update method from vehicle class. This gets the first GPS coordinates from the flight controller
             self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
 

@@ -247,15 +247,21 @@ class Server:
         '''
         print("\nStarting Server")
 
+
+        #gonna have to create more sockets eventually
         self.conns = []
         self.inputPipe.send('')
         self.sock.listen(5)
-        while True:
-            conn, addr = self.sock.accept()
-            self.conns.append(conn)
-           # conn.settimeout(1.4)
-            if addr[0] not in self.ipDict:
-                _thread.start_new_thread(self.initializeNode, (conn, addr))
+        try:
+            while True:
+                conn, addr = self.sock.accept()
+                self.conns.append(conn)
+               # conn.settimeout(1.4)
+                if addr[0] not in self.ipDict:
+                    _thread.start_new_thread(self.initializeNode, (conn, addr))
+        except:
+            self.sock.close()
+
 
 def getLocalIP(device=''):
 
