@@ -19,31 +19,31 @@ class UI:
         while True:
 
             self.userInput = input()
+            print(self.userInput)
 
 
     def commandLoop(self):
         pipeData = ''
         self.outPipe.send(0)
+
         while True:
             if self.inPipe.poll():
                 pipeData = self.inPipe.recv()
             try:
                 input = self.userInput.split(".")
 
-                if input[0] != '':
-                    print("\n"+len(input))
                 if input[0] == 'agents':
                     for i in pipeData:
-                        print("\n{} : {}".format(i, pipeData[i].ip))
+                        print("{} : {}".format(i, pipeData[i].ip))
                 if input[0] in pipeData:
                     if input[1] == 'ip':
-                        print("\n"+pipeData[input[0]].ip)
+                        print(pipeData[input[0]].ip)
                     if input[1] == 'type':
-                        print("\n"+pipeData[input[0]].vehicleType)
+                        print(pipeData[input[0]].vehicleType)
                     if input[1] == 'mode':
-                        print("\n"+pipeData[input[0]].mode)
+                        print(pipeData[input[0]].mode)
                     if input[1] == 'rate':
-                        print("\n"+pipeData[input[0]].upateRate)
+                        print(pipeData[input[0]].upateRate)
 
                 if input[0] == 'set' and len(input) == 4:
                     # name   #parameter  #newvalue

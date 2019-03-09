@@ -23,6 +23,7 @@ sudo apt-get install batctl
 
 
 sudo pip3 install dronekit
+#dronekit uses an older version of pymavlink that has a python3 issue
 sudo pip3 uninstall pymavlink
 sudo pip3 install pymavlink
 

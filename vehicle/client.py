@@ -16,6 +16,7 @@ import _thread
 class UAV(Vehicle):
     '''
     This class inherets from the dronekit Vehicle class. The dronekit library is a super easy way to
+    This class inherets from the dronekit Vehicle class. The dronekit library is a super easy way to
     communicate with the flight controller on the UAV
     '''
 
@@ -67,9 +68,9 @@ class Client():
         self.heading= 0
 
         if name == None:
-            print("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
+
             self.name = socket.gethostname()
-            print(self.name)
+
         else:
             self.name = name
 
