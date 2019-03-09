@@ -9,6 +9,12 @@ sudo apt-get purge wolfram-engine
 sudo apt-get upgrade
 sudo apt-get dist-upgrade
 
+sudo apt-get install python-dev
+sudo apt-get install libxml2
+sudo apt-get install libxml2-dev libxslt-dev
+sudo apt-get install libzbar-dev libzbar0
+sudo apt-get install python3-lxml
+sudo pip3 install lxml
 sudo apt-get isntall batmand
 sudo apt-get install batctl
 
