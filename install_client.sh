@@ -4,8 +4,6 @@
 
 ## This script is intended for a raspberry pi with a freshly installed raspbian
 ##It will install all the necessities to run the client
-NEWHOSTNAME=$1
-
 
 sudo apt-get purge wolfram-engine &&
 sudo apt-get upgrade &&
@@ -31,5 +29,4 @@ sudo pip3 install Adafruit-SSD1306 &&
 
 sudo apt-get install -y i2c-tools &&
 sudo apt-get install python-imaging python-smbus &&
-sudo apt-get install nmap &&
-sudo sed -i "1s/.*/$NEWHOSTNAME/" /etc/hostname &&
+sudo apt-get install nmap 
