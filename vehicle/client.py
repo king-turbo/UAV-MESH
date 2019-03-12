@@ -117,7 +117,7 @@ class Client():
                 self.initMsgFrmClient["lon"] = 0
                 self.initMsgFrmClient["lat"] = 0
                 self.initMsgFrmClient["alt"] = 0
-                print("GPS lock is bad")
+
 
 
         except:
@@ -149,7 +149,7 @@ class Client():
         def loop():
             while True:
                 self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
-                time.sleep(1)
+                time.sleep(3)
                 print(self.v2vComms.uavs)
 
         _thread.start_new_thread(loop, ())
@@ -237,16 +237,16 @@ class Client():
                 if r:
                     #recieve the data
                     data = self.sock.recv(1024)
-                    print(data)
                     #decode the data
                     try:
                         _data = json.loads(data.decode("utf-8"))
                         #Add configurable stuff here. for example if you wanted to be able to control X on the client side, if _data[0]== 'X':
                         #                                                                                                       self.X = int(_data[1])
                         if _data[0] == 'rate':
+                            print(_data)
                             self.updateRate = int(_data[1])
                     except:
-                        print("data issues")
+                        print("Something went wrong decoding message!")
                         pass
                 toc =  time.time() - tic
                 #try and except is due to

@@ -73,7 +73,7 @@ class Server:
             _thread.start_new_thread(self.UTMTelemUpdate, ())
 
     def initializeNode(self, conn, addr):
-        print(addr)
+
         try:
             #receive data from socket
             data = conn.recv(1024)
@@ -104,7 +104,7 @@ class Server:
                     #if the connection's name exists, but the IP addresses are the same, then this is indicative of
                     #two vehicles operating with the same name. The connection is closed.
                     elif self.agents[_data["name"]].ip != addr[0]:
-                        print("\nneed a unique name")  #TODO: make a fancy exception thing
+                        print("\n A vehicle attempted to connect with a name already in use")  #TODO: make a fancy exception thing
                         conn.close()
 
                     #if the vehicle's name is already stored and the IP addresses match, this means that
@@ -123,7 +123,7 @@ class Server:
             conn.close()
 
     def probeReply(self):
-        print("\nreplying to probe")
+
         return json.dumps({"GCS" : self.gcsName}).encode("utf-8")
 
     def createUTMPointFlight(self, name, lon, lat, alt):
@@ -132,7 +132,7 @@ class Server:
         to the vehicle object in the agent dictionary
         '''
         self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
-        print(self.agents[name].GUFI)
+        print("Created GUFI:" + self.agents[name].GUFI)
 
     def UTMTelemUpdate(self):
         '''
@@ -213,16 +213,17 @@ class Server:
                            conn.close()
                            break
                    except Exception as e:
-                       print("threw an exception in data part")
+
                        print(e)
                        pass
 
 
-                else: #if no data
-                    print("no dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!!!!")
+                else:
+                    pass
+
             else:
                 #if the connection has timed out, then remove it from the ipDict. #TODO: make sure this is what we want
-                print("\nremoving connection")
+                print("\n " + self.ipDict[addr[0]] +"has disconnected!")
                 conn.close()
                 del self.ipDict[addr[0]]
                 break
@@ -295,8 +296,7 @@ if __name__=="__main__":
 
     #Get the IP and Port of server from the localIP py file
 
-    HOST = getLocalIP(device="wlan")
-    print(HOST)
+    HOST = getLocalIP(device="eth0")
     PORT = 65432
 
     #These two pipes send data from the UI to the clientHandler server loop
