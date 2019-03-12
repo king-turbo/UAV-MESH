@@ -163,8 +163,8 @@ class Client():
         '''
         
         self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
-        if self.lon == 0:
-            print("GPS lock is bad")
+    
+    
 
         self.sendDict = {"name" : self.name,
                          "mode" : self.mode,
