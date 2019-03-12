@@ -150,7 +150,7 @@ class Client():
             while True:
                 self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
                 time.sleep(3)
-                print(self.v2vComms.uavs)
+                
 
         _thread.start_new_thread(loop, ())
 
@@ -177,7 +177,8 @@ class Client():
         self.v2vComms.findNodes()
         print("Finding GCS")
         self.gcsList = self.v2vComms.returnGCS()
-        print("List of GCSs: " + self.gcsList)
+        print("List of GCSs:")
+        print(self.gcsList)
         if not self.gcsList:
             #TODO: need to try to connect again if gcslist is empty
             print("gcs list empty")
@@ -245,7 +246,8 @@ class Client():
                         #Add configurable stuff here. for example if you wanted to be able to control X on the client side, if _data[0]== 'X':
                         #                                                                                                       self.X = int(_data[1])
                         if _data[0] == 'rate':
-                            print("Instructions from GCS: " + _data)
+                            print("Instructions from GCS:")
+                            print(_data)
                             self.updateRate = int(_data[1])
                     except:
                         print("Something went wrong decoding message!")

@@ -61,6 +61,7 @@ class V2V:
                     self.listeningSockets.append([conn, addr])
                     #need to rearrange this.... maybe?
                     _thread.start_new_thread(self.listenToVehicle, (conn, _data["name"],addr[0],_data["type"]))
+                    print("Received request to connect from node:")
                     print(_data)
                     if _data["name"] not in self.uavOutgoingSocketDict:
                         #outgoing socks
@@ -209,6 +210,7 @@ def probe(ip):
             r, _, _ = select.select([s], [], [], .2)
             if r:
                 data = json.loads(s.recv(1024).decode("utf-8"))
+                print("Probed node:")
                 print(data)
                 # newNeighbors.append([data, ip])
 
