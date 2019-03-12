@@ -134,7 +134,7 @@ class Server:
         to the vehicle object in the agent dictionary
         '''
         self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
-        print("Created GUFI:" + self.agents[name].GUFI)
+        print("Created GUFI for "+name +" : " + self.agents[name].GUFI)
 
     def UTMTelemUpdate(self):
         '''
