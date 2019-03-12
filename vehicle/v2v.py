@@ -66,7 +66,7 @@ class V2V:
                     if _data["name"] not in self.uavOutgoingSocketDict:
                         #outgoing socks
                         success, sock = self.connect2UAV(addr[0])
-                        print(success)
+                        
                         if success:
                                                                 #outgoing
                             self.uavOutgoingSocketDict[_data["name"]] = [addr[0], sock]

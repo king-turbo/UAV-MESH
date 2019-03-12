@@ -200,7 +200,8 @@ class Client():
             self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
             #recieve data
             data = self.sock.recv(1024)
-            print("Init from GCS: " + data)
+            print("Init from GCS:")
+            print(data)
             #decode data
             _data = json.loads(data.decode("utf-8"))
             #change the updateRate to whatever the server requests
