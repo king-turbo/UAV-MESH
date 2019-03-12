@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 import sys, getopt
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
