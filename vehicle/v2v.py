@@ -45,7 +45,7 @@ class V2V:
             _thread.start_new_thread(self.talkToNewNode, (conn, addr))
 
     def talkToNewNode(self, conn, addr):
-        print("NEW NODE!!")
+        print("Connected to new node!")
         try:
             data = conn.recv(1024)
             if data:
@@ -54,9 +54,9 @@ class V2V:
                     conn.sendall(self.probeReply())
                     conn.close()
                 if "$connect" in _data:
-                    print("we are in connecting!")
+                    
                     conn.sendall(self.successConnReply())
-                    print("we have replied")
+                    
                     #incoming socks
                     self.listeningSockets.append([conn, addr])
                     #need to rearrange this.... maybe?
