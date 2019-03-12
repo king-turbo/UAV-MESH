@@ -175,7 +175,9 @@ class Client():
 
     def findGCS(self):
         self.v2vComms.findNodes()
+        print("Finding GCS")
         self.gcsList = self.v2vComms.returnGCS()
+        print("List of GCSs: " + self.gcsList)
         if not self.gcsList:
             #TODO: need to try to connect again if gcslist is empty
             print("gcs list empty")
@@ -197,7 +199,7 @@ class Client():
             self.sock.sendall(json.dumps(self.initMsgFrmClient).encode("utf-8"))
             #recieve data
             data = self.sock.recv(1024)
-            print(data)
+            print("Init from GCS: " + data)
             #decode data
             _data = json.loads(data.decode("utf-8"))
             #change the updateRate to whatever the server requests
@@ -243,7 +245,7 @@ class Client():
                         #Add configurable stuff here. for example if you wanted to be able to control X on the client side, if _data[0]== 'X':
                         #                                                                                                       self.X = int(_data[1])
                         if _data[0] == 'rate':
-                            print(_data)
+                            print("Instructions from GCS: " + _data)
                             self.updateRate = int(_data[1])
                     except:
                         print("Something went wrong decoding message!")
