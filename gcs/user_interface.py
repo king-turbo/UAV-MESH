@@ -19,7 +19,7 @@ class UI:
         while True:
 
             self.userInput = input()
-            print(self.userInput)
+        
 
 
     def commandLoop(self):

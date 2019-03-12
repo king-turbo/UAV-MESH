@@ -196,7 +196,7 @@ class Server:
                                #that this clientHandler is working with, then:
                                if oPipe[0] == self.ipDict[addr[0]]:
                                    #send the remained of the message to the client, in the above example's case: "rate.5"
-                                   print(oPipe[1:])
+                                   
                                    self.replyMsg(conn, oPipe[1:])
                                else:
                                    #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
