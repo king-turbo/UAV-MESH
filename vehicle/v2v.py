@@ -5,6 +5,7 @@ import json
 import select
 from multiprocessing import Pool
 import _thread
+import threading
 import time
 from gcs.server import VehicleClass as vc
 
@@ -33,16 +34,24 @@ class V2V:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.HOST, self.PORT))
-        _thread.start_new_thread(self.listen, ())
+        threading.Thread(target=self.listen).start()
+        # _thread.start_new_thread(self.listen, ())
 
 
     def listen(self):
 
         self.sock.listen(5)
-        while True:
-            conn, addr = self.sock.accept()
+        try:
+            while True:
 
-            _thread.start_new_thread(self.talkToNewNode, (conn, addr))
+                conn, addr = self.sock.accept()
+                threading.Thread(target=self.talkToNewNode, args=(conn, addr)).start()
+                # _thread.start_new_thread(self.talkToNewNode, (conn, addr))
+        except:
+            print("exception in v2v listen")
+            self.sock.close()
+
+
 
     def talkToNewNode(self, conn, addr):
         print("Connected to new node!")
@@ -60,7 +69,8 @@ class V2V:
                     #incoming socks
                     self.listeningSockets.append([conn, addr])
                     #need to rearrange this.... maybe?
-                    _thread.start_new_thread(self.listenToVehicle, (conn, _data["name"],addr[0],_data["type"]))
+                    threading.Thread(target=self.listenToVehicle, args=((conn, _data["name"],addr[0],_data["type"]))).start()
+                    # _thread.start_new_thread(self.listenToVehicle, (conn, _data["name"],addr[0],_data["type"]))
                     print("Received request to connect from node:")
                     print(_data)
                     if _data["name"] not in self.uavOutgoingSocketDict:
@@ -131,6 +141,8 @@ class V2V:
                             self.nodeList.append([neighbor[0]["UAV"],neighbor[1]])
                                                                 #outgoing
                         self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
+                    else:
+                        sock.close()
 
     def connect2UAV(self,ip):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -149,7 +161,6 @@ class V2V:
         
 
     def returnGCS(self):
-
         return self.gcsList
 
     def msgAllUavs(self, lat, lon, alt, heading, **kwargs):
@@ -166,37 +177,42 @@ class V2V:
             sock=self.uavOutgoingSocketDict[node][1]
             sock.sendall(json.dumps(msg).encode("utf-8"))
 
+    def closeOutGoingConns(self):
+        for node in self.uavOutgoingSocketDict:
+            self.uavOutgoingSocketDict[node].close()
+        self.sock.close()
+        print("in close outgoing conns")
+
     def listenToVehicle(self,conn, name, ip, vehicleType):
 
         self.uavs[name] = vc(name,ip, vehicleType)
         while True:
+            try:
+                # This waits for data with a timeout of 2 seconds
 
-            # This waits for data with a timeout of 2 seconds
+                r, _, _ = select.select([conn], [], [], 2)
 
-            r, _, _ = select.select([conn], [], [], 2)
+                # if there is data
+                if r:
 
-            # if there is data
-            if r:
+                    data = conn.recv(1024)
 
-                data = conn.recv(1024)
+                    if data:
+                        try:
+                            _data = json.loads(data.decode("utf-8"))
 
-                if data:
-                    try:
-                        _data = json.loads(data.decode("utf-8"))
-
-                        self.uavs[name].lon = _data["lon"]
-                        self.uavs[name].lat = _data["lat"]
-                        self.uavs[name].alt = _data["alt"]
-                        self.uavs[name].heading  = _data["heading"]
-                    except Exception as e:
-                        print("exception occured in listenToVehicle method")
-                        print(e)
-                        pass
-
-
-
-
-
+                            self.uavs[name].lon = _data["lon"]
+                            self.uavs[name].lat = _data["lat"]
+                            self.uavs[name].alt = _data["alt"]
+                            self.uavs[name].heading  = _data["heading"]
+                        except Exception as e:
+                            print("exception occured in listenToVehicle method")
+                            print(e)
+                            pass
+            except Exception as e:
+                print(e)
+                print("exception in v2v listen2vehicles")
+                conn.close()
 
 
 

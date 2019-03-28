@@ -6,6 +6,7 @@ import sys, getopt
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import _thread
+import threading
 import select
 import multiprocessing as mp
 import time
@@ -72,7 +73,8 @@ class Server:
         self.outputPipe = outPipe
 
         if self.utmUpdate:
-            _thread.start_new_thread(self.UTMTelemUpdate, ())
+            threading.Thread(target=self.UTMTelemUpdate).start()
+            # _thread.start_new_thread(self.UTMTelemUpdate, ())
 
     def initializeNode(self, conn, addr):
 
@@ -261,8 +263,11 @@ class Server:
                 self.conns.append(conn)
                # conn.settimeout(1.4)
                 if addr[0] not in self.ipDict:
-                    _thread.start_new_thread(self.initializeNode, (conn, addr))
+                    threading.Thread(target=self.initializeNode, args=(conn, addr)).start()
+                    # _thread.start_new_thread(self.initializeNode, (conn, addr))
         except:
+            for c in self.conns:
+                c.close()
             self.sock.close()
 
 

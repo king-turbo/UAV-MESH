@@ -11,6 +11,7 @@ import subprocess
 from vehicle.v2v import V2V
 from vehicle import led_display
 import _thread
+import threading
 
 
 class UAV(Vehicle):
@@ -148,11 +149,12 @@ class Client():
 
         def loop():
             while True:
-                self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
-                time.sleep(3)
-                
+                    self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
+                    time.sleep(3)
 
-        _thread.start_new_thread(loop, ())
+
+        threading.Thread(target=loop).start()
+
 
     def update(self):
 
@@ -278,53 +280,12 @@ class Client():
 
 
     def closeConnection(self):
+        print("in close connections in client")
+        self.v2vComms.sock.close()
         self.sock.close()
 
 
 
-def main(argv):
-    display = True
-    try:
-        opts, args = getopt.getopt(argv, "hn:d", ["help","name=","disableDisplay"])
-
-    except Exception as e:
-        print("-n <name> -d disables LED output")
-        print(e)
-        sys.exit()
-
-    name = None
-    for opt, arg in opts:
-        if opt == "-h":
-            print("-n <name> -d disables LED output")
-            sys.exit()
-        if opt in ('-n', "--name"):
-            name = arg
-        if opt in ('-d', "--disableDisplay"):
-            display = False
-            print("LED display is disabled")
-
-    if name == None:
-        print("Using hostname as UAV name!")
-
-
-
-    node = Client("MULTI_ROTOR", name, display)
-    try:
-        node.initVehicle()
-        node.initV2V()
-        # _thread.start_new_thread(node.neighborHandler(), ())
-        node.initConn()
-        sys.exit()
-    except Exception as e:
-        node.closeConnection()
-        print(e)
-        sys.exit()
-
-
-
-if __name__=="__main__":
-
-    main(sys.argv[1:])
 
 
 
