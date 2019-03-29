@@ -8,7 +8,7 @@ import _thread
 import threading
 import time
 from gcs.server import VehicleClass as vc
-
+import sys
 
 class V2V:
 
@@ -27,6 +27,7 @@ class V2V:
         self.uavOutgoingSocketDict = {}
         self.listeningSockets = []
         self.uavs = {}
+        self.kill = False
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -34,7 +35,9 @@ class V2V:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.HOST, self.PORT))
-        threading.Thread(target=self.listen).start()
+        listenThread = threading.Thread(target=self.listen)
+        listenThread.daemon = True
+        listenThread.start()
         # _thread.start_new_thread(self.listen, ())
 
 
@@ -42,16 +45,12 @@ class V2V:
 
         self.sock.listen(5)
         try:
-            while True:
-
+            while not self.kill:
                 conn, addr = self.sock.accept()
                 threading.Thread(target=self.talkToNewNode, args=(conn, addr)).start()
                 # _thread.start_new_thread(self.talkToNewNode, (conn, addr))
         except:
             print("exception in v2v listen")
-            self.sock.close()
-
-
 
     def talkToNewNode(self, conn, addr):
         print("Connected to new node!")
@@ -126,6 +125,7 @@ class V2V:
         p = Pool(5)
         newNeighbors = p.map(probe, newIPs)
 
+
         for neighbor in newNeighbors:
             if neighbor != None:
                                        #node name       #ip
@@ -143,6 +143,8 @@ class V2V:
                         self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
                     else:
                         sock.close()
+        p.terminate()
+        p.join()
 
     def connect2UAV(self,ip):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -158,7 +160,6 @@ class V2V:
                 sock.close()
                 return False, 0
 
-        
 
     def returnGCS(self):
         return self.gcsList
@@ -174,29 +175,32 @@ class V2V:
 
         #maybe do this multiprocessing?
         for node in self.uavOutgoingSocketDict:
-            sock=self.uavOutgoingSocketDict[node][1]
+            sock = self.uavOutgoingSocketDict[node][1]
             sock.sendall(json.dumps(msg).encode("utf-8"))
 
-    def closeOutGoingConns(self):
+    def closeAllConns(self):
+
+        self.sock.close()
+        for node in self.listeningSockets:
+            node[0].close()
         for node in self.uavOutgoingSocketDict:
             self.uavOutgoingSocketDict[node].close()
         self.sock.close()
-        print("in close outgoing conns")
+
+
+        print("Closed all v2v Conns")
 
     def listenToVehicle(self,conn, name, ip, vehicleType):
 
-        self.uavs[name] = vc(name,ip, vehicleType)
-        while True:
+        self.uavs[name] = vc(name, ip, vehicleType)
+        while not self.kill:
+
             try:
                 # This waits for data with a timeout of 2 seconds
-
                 r, _, _ = select.select([conn], [], [], 2)
-
                 # if there is data
                 if r:
-
                     data = conn.recv(1024)
-
                     if data:
                         try:
                             _data = json.loads(data.decode("utf-8"))
@@ -222,16 +226,16 @@ def probe(ip):
         try:
             s.settimeout(1)
             s.connect((ip, 65432))
-            s.sendall(json.dumps({"$probe": "UAV"}).encode("utf-8"))
+            s.sendall(json.dumps({"$probe" : "UAV"}).encode("utf-8"))
             r, _, _ = select.select([s], [], [], .2)
             if r:
                 data = json.loads(s.recv(1024).decode("utf-8"))
                 print("Probed node:")
                 print(data)
                 # newNeighbors.append([data, ip])
-
+                s.close()
                 return [data, ip]
-
         except:
             pass
     s.close()
+    print("ended")

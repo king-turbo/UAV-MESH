@@ -12,6 +12,7 @@ from vehicle.v2v import V2V
 from vehicle import led_display
 import _thread
 import threading
+import signal
 
 
 class UAV(Vehicle):
@@ -55,34 +56,33 @@ class Client():
     
     '''
 
-    def __init__(self, vehicleType, name, allowLED = True):
+    def __init__(self, vehicleType, name, kill, allowLED = True):
 
         self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(1.4)
-
         self.status = "default"
         self.updateRate = 5
         self.sending = True
-
         self.vehicleType = vehicleType
         self.heading= 0
+        self.kill = kill
+        self.ui = False
 
         if name == None:
-
             self.name = socket.gethostname()
-
         else:
             self.name = name
-
         self.initMsgFrmClient = {"$connect": 1, "type": vehicleType, "name": self.name}
 
 
 
     def initVehicle(self):
+
         '''
         This method initializes the connection to the flight controller and pulls local IP information
         '''
+
         #run the ttyfinder shell script to find what type of flight controller and which ACM it is connected to
         subprocess.call(['.././sysinfo.sh'])
         time.sleep(.00001)
@@ -148,9 +148,10 @@ class Client():
     def neighborHandler(self):
 
         def loop():
-            while True:
-                    self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
-                    time.sleep(3)
+            while not self.kill.kill:
+                print("are you the culprit?")
+                self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
+                time.sleep(3)
 
 
         threading.Thread(target=loop).start()
@@ -165,8 +166,6 @@ class Client():
         '''
         
         self.lon, self.lat, self.alt = self.uav.updateUAVGPS()
-    
-    
 
         self.sendDict = {"name" : self.name,
                          "mode" : self.mode,
@@ -227,7 +226,8 @@ class Client():
         '''
         sendData handles information to and from the server once a connection has been made
         '''
-        while True:
+
+        while not self.kill.kill:
             try:
                 #We want to send the data at precise intervals, so we'll have the loop sleep at time = 1/updatrate - looptime
                 tic = time.time()
@@ -268,8 +268,6 @@ class Client():
                 time.sleep(2.2)
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.initConn()
-            except KeyboardInterrupt:
-                self.closeConnection()
 
             except ConnectionResetError:
                 print("Connection Reset... Reconnecting\n")
@@ -279,10 +277,18 @@ class Client():
                 self.initConn()
 
 
-    def closeConnection(self):
-        print("in close connections in client")
+
+    def closeConnections(self):
+
+        print("closing connections")
+        if self.ui:
+            self.ui.kill = True
+        self.v2vComms.kill = True
+        self.v2vComms.closeAllConns()
         self.v2vComms.sock.close()
         self.sock.close()
+
+
 
 
 

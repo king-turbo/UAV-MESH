@@ -12,6 +12,7 @@ class User2VehicleInterface:
 
     def __init__(self, I2C, batIP, ethernetIP, wifiIP):
 
+        self.kill = False
         self.fontPath = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
         self.disp = fruit.SSD1306_128_32(rst=24, i2c_address=I2C)
         self.width = self.disp.width
@@ -56,7 +57,7 @@ class User2VehicleInterface:
     def loading(self, prevText):
         offset = 0
         sign = 1
-        while self.loadFlag:
+        while self.loadFlag and not self.kill:
             self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
             for m in self.messages[prevText]:
                 self.drawText(m[0], m[1])
@@ -71,7 +72,7 @@ class User2VehicleInterface:
 
     def main(self):
 
-        while True:
+        while not self.kill:
             if self.displayMode == "connecting2FC":
                 self.LCDMessage("connecting2FC")
                 self.LCDMessage("connected!")

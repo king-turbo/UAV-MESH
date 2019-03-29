@@ -1,10 +1,25 @@
 #!/usr/bin/env python3
+
 import sys
 import os
+import signal
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from vehicle.client import *
 
+
+class Killer:
+
+    def __init__(self):
+        self.kill = False
+        signal.signal(signal.SIGINT, self.exit)
+        signal.signal(signal.SIGTERM, self.exit)
+    def exit(self, signum, frame):
+        self.kill = True
+
+
+
 def main(argv):
+
     display = True
     try:
         opts, args = getopt.getopt(argv, "hn:d", ["help","name=","disableDisplay"])
@@ -12,7 +27,7 @@ def main(argv):
     except Exception as e:
         print("-n <name> -d disables LED output")
         print(e)
-        sys.exit()
+        sys.exit(0)
 
     name = None
     for opt, arg in opts:
@@ -27,18 +42,17 @@ def main(argv):
 
     if name == None:
         print("Using hostname as UAV name!")
-    node = Client("MULTI_ROTOR", name, display)
-    try:
-        node.initVehicle()
-        node.initV2V()
-        node.initConn()
 
-    except Exception as e:
-        node.closeConnection()
-        node.v2vComms.closeOutGoingConns()
-        sys.exit(0)
+    kill = Killer()
+
+    node = Client("MULTI_ROTOR", name, kill, display)
+    node.initVehicle()
+    node.initV2V()
+    node.initConn()
+
 
 if __name__=="__main__":
 
     main(sys.argv[1:])
+    print("exited")
     sys.exit(0)

@@ -18,7 +18,7 @@ if __name__=="__main__":
 
     #Get the IP and Port of server from the localIP py file
 
-    # HOST = "192.168.254.11"
+    HOST = "192.168.254.11"
     PORT = 65432
 
     #These two pipes send data from the UI to the clientHandler server loop
