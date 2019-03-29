@@ -4,11 +4,12 @@ import multiprocessing
 
 class UI:
     # TODO: fill with comments
-    def __init__(self, input_pipe, output_pipe):
+    def __init__(self, input_pipe, output_pipe, killer):
 
         self.userInput = ''
         self.inPipe = input_pipe
         self.outPipe = output_pipe
+        self.kill = killer
 
     def start(self):
         self.listener = _thread.start_new_thread(self.userInputLoop, ())
@@ -16,7 +17,7 @@ class UI:
 
     def userInputLoop(self):
 
-        while True:
+        while not self.kill.kill:
 
             self.userInput = input()
         
@@ -26,7 +27,7 @@ class UI:
         pipeData = ''
         self.outPipe.send(0)
 
-        while True:
+        while not self.kill.kill:
             if self.inPipe.poll():
                 pipeData = self.inPipe.recv()
             try:
@@ -49,6 +50,10 @@ class UI:
                     # name   #parameter  #newvalue
                     inst = [input[1], input[2], input[3]]
                     self.outPipe.send(inst)
+
+                if input[0] == 'quit':
+                    
+                    self.kill.kill = True
 
 
             except:

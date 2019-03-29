@@ -49,7 +49,7 @@ class Server:
 
     '''
 
-    def __init__(self, HOST, PORT, oneskyAPI, inPipe, outPipe, gcsName, utmUpdate = True, verbose = True):
+    def __init__(self, HOST, PORT, oneskyAPI, inPipe, outPipe, killer, gcsName, utmUpdate = True, verbose = True):
 
         self.gcsName = gcsName
         self.HOST = HOST
@@ -71,6 +71,7 @@ class Server:
         self.verbose = verbose
         self.inputPipe = inPipe
         self.outputPipe = outPipe
+        self.kill = killer
 
         if self.utmUpdate:
             threading.Thread(target=self.UTMTelemUpdate).start()
@@ -142,7 +143,7 @@ class Server:
         '''
         This runs on a separate thread. It updates telemetry to the UTM
         '''
-        while True:
+        while not self.kill.kill:
 
             for agent in self.agents:
                 try:
@@ -159,7 +160,7 @@ class Server:
         So each clientHandler only handles one client.
         '''
         oPipe = False
-        while True:
+        while not self.kill.kill:
             
             #This waits for data with a timeout of 2 seconds
             
@@ -196,6 +197,7 @@ class Server:
                                #The ipDict has the format {ipAddress : nameOfClient}, oPipe[0] should be the name of client
                                #when a user enters "cinerella.rate.5", "cinderella" is oPipe[0]. if cinerella == the name
                                #that this clientHandler is working with, then:
+
                                if oPipe[0] == self.ipDict[addr[0]]:
                                    #send the remained of the message to the client, in the above example's case: "rate.5"
                                    
@@ -243,8 +245,7 @@ class Server:
         #sends message to the client
         conn.sendall(json.dumps(msg).encode("utf-8"))
 
-    def closeConnection(self):
-        self.sock.close()
+
 
     def listen(self):
         '''
@@ -258,7 +259,7 @@ class Server:
         self.inputPipe.send('')
         self.sock.listen(5)
         try:
-            while True:
+            while not self.kill.kill:
                 conn, addr = self.sock.accept()
                 self.conns.append(conn)
                # conn.settimeout(1.4)
@@ -268,7 +269,14 @@ class Server:
         except:
             for c in self.conns:
                 c.close()
-            self.sock.close()
+
+        self.closeConnections()
+            
+    def closeConnections(self):
+        
+        for conn in self.conns:
+            conn.close()
+        self.sock.close()
 
 
 def getLocalIP(device=''):
@@ -288,57 +296,4 @@ def getLocalIP(device=''):
             return peripherals[3]
         if device == 'wlan':
             return peripherals[5]
-
-
-
-if __name__=="__main__":
-
-    '''
-    The user interface and server loops run on different processes.
-    '''
-
-    #store JWT into 'token'
-    with open("mwalton.token", "r") as toke:
-        token = toke.read()
-
-    #Get the IP and Port of server from the localIP py file
-
-    HOST = "192.168.254.11"
-    PORT = 65432
-
-    #These two pipes send data from the UI to the clientHandler server loop
-    input_parent_conn, input_child_conn = mp.Pipe()
-    output_parent_conn, output_child_conn = mp.Pipe()
-
-    #create api interface with onesky
-    utm = OneSkyAPI(token)
-
-    #instantiate the UI with the pipes
-    ui = UI(input_child_conn, output_parent_conn)
-    #instantiate the server
-    try:
-        queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn,"castle", utmUpdate = True, verbose=True, )
-        #start the listening method with pipes
-        listenProc = mp.Process(target= queenB.listen, args=())
-        listenProc.start()
-
-        ui.start()
-        listenProc.join()
-
-    except Exception as e:
-        for conn in queenB.conns:
-            conn.close()
-        queenB.closeConnection()
-        listenProc.join()
-
-        print(e)
-
-
-    '''
-    TODO: work on exception handling
-    TODO: work on reconnect for client side (did this now need to test for different types of comms failures)
-    TODO: Need to figure out GUFI handling for disconnected vehicles/server failure
-    TODO: properly get rid of threads and processes 
-    TODO: switch from _threading crap to the ez thread
-    '''
 

@@ -5,12 +5,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import multiprocessing as mp
 from gcs.server import *
+from utils.system_killer import Killer
 
 if __name__=="__main__":
 
-    '''
-    Main function for GCS
-    '''
 
     #store JWT into 'token'
     with open("mwalton.token", "r") as toke:
@@ -28,21 +26,22 @@ if __name__=="__main__":
     #create api interface with onesky
     utm = OneSkyAPI(token)
 
+
+    kill = Killer()
     #instantiate the UI with the pipes
-    ui = UI(input_child_conn, output_parent_conn)
+    ui = UI(input_child_conn, output_parent_conn, kill)
     #instantiate the server
-    try:
-        queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, "castle", utmUpdate = True, verbose=True, )
-        #start the listening method with pipes
-        listenProc = mp.Process(target= queenB.listen, args=())
-        listenProc.start()
+    
+    
+    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, kill, "castle", utmUpdate = True, verbose=True, )
+    
+    #start the listening method with pipes
+    listenProc = mp.Process(target= queenB.listen, args=())
+    listenProc.start()
+    ui.start()
+    listenProc.join()
 
-        ui.start()
-        listenProc.join()
+    sys.exit(0)
+    
 
-    except Exception as e:
-        for conn in queenB.conns:
-            conn.close()
-        queenB.closeConnection()
-        listenProc.join()
-        print(e)
+    
