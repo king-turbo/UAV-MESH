@@ -5,17 +5,7 @@ import os
 import signal
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from vehicle.client import *
-
-
-class Killer:
-
-    def __init__(self):
-        self.kill = False
-        signal.signal(signal.SIGINT, self.exit)
-        signal.signal(signal.SIGTERM, self.exit)
-    def exit(self, signum, frame):
-        self.kill = True
-
+from utils.system_killer import Killer
 
 
 def main(argv):
