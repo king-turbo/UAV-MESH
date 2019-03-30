@@ -74,7 +74,9 @@ class Server:
         self.kill = killer
 
         if self.utmUpdate:
-            threading.Thread(target=self.UTMTelemUpdate).start()
+            utm_thread = threading.Thread(target=self.UTMTelemUpdate)
+            utm_thread.daemon = True
+            utm_thread.start()
             # _thread.start_new_thread(self.UTMTelemUpdate, ())
 
     def initializeNode(self, conn, addr):
@@ -182,16 +184,16 @@ class Server:
                        self.agents[self.ipDict[addr[0]]].lat = _data["lat"]
                        self.agents[self.ipDict[addr[0]]].alt = _data["alt"]
                        self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
-                       self.agents[self.ipDict[addr[0]]].mode = _data["mode"]
+                       self.agents[self.ipDict[addr[0]]].mode = _data["mode"]    
 
                        #This next section of code will send instructions to the vehicle
 
-                       #if the incoming data does not ask to close the connection
+                       #if the incoming data does not ask to close the connection    
                        if "close connection" not in _data:
                            #if there is data in the pipe from the user interface
                            if self.outputPipe.poll():
                                #read the data
-                               oPipe = self.outputPipe.recv()
+                               oPipe = self.outputPipe.recv()    
                            #is this if necessary? TODO: test if this if is necessary
                            if oPipe:
                                #The ipDict has the format {ipAddress : nameOfClient}, oPipe[0] should be the name of client
@@ -199,19 +201,17 @@ class Server:
                                #that this clientHandler is working with, then:
 
                                if oPipe[0] == self.ipDict[addr[0]]:
-                                   #send the remained of the message to the client, in the above example's case: "rate.5"
+                                   #send the remained of the message to the client, in the above example's case: "rate.5"    
                                    
                                    self.replyMsg(conn, oPipe[1:])
                                else:
                                    #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
                                    #to a 1?
                                    
-                                   self.replyMsg(conn, [0])
+                                   self.replyMsg(conn, [0])                                
+                           else:    
                                    
-                           else:
-                               
-                               self.replyMsg(conn,[0])
-                               
+                               self.replyMsg(conn,[0])                               
                        else:
                            #client requested removal, remove
                            print("Removed connection at Client's Request")
@@ -222,14 +222,12 @@ class Server:
 
                        print(e)
                        pass
-
-
                 else:
                     pass
 
             else:
                 #if the connection has timed out, then remove it from the ipDict. #TODO: make sure this is what we want
-                print("\n " + self.ipDict[addr[0]] +" has disconnected!")
+                print("\n " + self.ipDict[addr[0]] + " has disconnected!")
                 conn.close()
                 del self.ipDict[addr[0]]
                 break
@@ -239,44 +237,50 @@ class Server:
             self.inputPipe.send(self.agents)
             
             oPipe = False
-            
+
+        self.sock.close()   
                   
     def replyMsg(self, conn, msg):
         #sends message to the client
         conn.sendall(json.dumps(msg).encode("utf-8"))
 
 
-
     def listen(self):
+
         '''
         First method that is ran. Spawns new threads for each client.
         '''
-        print("\nStarting Server")
-
-
-        #gonna have to create more sockets eventually
-        self.conns = []
-        self.inputPipe.send('')
-        self.sock.listen(5)
-        try:
-            while not self.kill.kill:
-                conn, addr = self.sock.accept()
-                self.conns.append(conn)
-               # conn.settimeout(1.4)
-                if addr[0] not in self.ipDict:
-                    threading.Thread(target=self.initializeNode, args=(conn, addr)).start()
-                    # _thread.start_new_thread(self.initializeNode, (conn, addr))
-        except:
-            for c in self.conns:
-                c.close()
-
-        self.closeConnections()
-            
-    def closeConnections(self):
         
+        def listening():
+            
+            try:
+                while not self.kill.kill:
+
+                    conn, addr = self.sock.accept()
+                    print(conn,addr)
+                    self.conns.append(conn)
+                    
+                    
+                   # conn.settimeout(1.4)
+                    if addr[0] not in self.ipDict:
+                        threading.Thread(target=self.initializeNode, args=(conn, addr)).start()
+                        # _thread.start_new_thread(self.initializeNode, (conn, addr))
+            except:
+                print("excepted")
+                for c in self.conns:
+                    c.close()
+
+        print("\nStarting Server")       
+               
+        listening()
+        
+            
+    
+    def closeConnections(self):        
+        #not used
         for conn in self.conns:
             conn.close()
-        self.sock.close()
+        
 
 
 def getLocalIP(device=''):
@@ -284,7 +288,7 @@ def getLocalIP(device=''):
     if os.name == 'nt':
         return socket.gethostbyname(socket.gethostname())
     if os.name == 'posix':
-        subprocess.call(['.././sysinfo.sh'])
+        subprocess.call(['../utils/./sysinfo.sh'])
         time.sleep(.00001)
         peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]
         if device == 'eth0':

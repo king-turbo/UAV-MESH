@@ -7,8 +7,8 @@ import multiprocessing as mp
 from gcs.server import *
 from utils.system_killer import Killer
 
-if __name__=="__main__":
 
+def main():
 
     #store JWT into 'token'
     with open("mwalton.token", "r") as toke:
@@ -28,6 +28,7 @@ if __name__=="__main__":
 
 
     kill = Killer()
+
     #instantiate the UI with the pipes
     ui = UI(input_child_conn, output_parent_conn, kill)
     #instantiate the server
@@ -37,11 +38,18 @@ if __name__=="__main__":
     
     #start the listening method with pipes
     listenProc = mp.Process(target= queenB.listen, args=())
+    listenProc.daemon = True
     listenProc.start()
-    ui.start()
-    listenProc.join()
-
+    ui.start()    
+    listenProc.join()    
     sys.exit(0)
+
+
+if __name__=="__main__":
+
+    main()
+
+    
     
 
     

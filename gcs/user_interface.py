@@ -1,4 +1,4 @@
-import _thread
+import threading
 import multiprocessing
 
 
@@ -12,22 +12,25 @@ class UI:
         self.kill = killer
 
     def start(self):
-        self.listener = _thread.start_new_thread(self.userInputLoop, ())
+
+        self.listener = threading.Thread(target=self.userInputLoop)
+        self.listener.daemon = True
+        self.listener.start()
         self.commandLoop()
 
     def userInputLoop(self):
 
         while not self.kill.kill:
-
+              
             self.userInput = input()
-        
-
+                
 
     def commandLoop(self):
         pipeData = ''
         self.outPipe.send(0)
 
-        while not self.kill.kill:
+        while not self.kill.kill:            
+
             if self.inPipe.poll():
                 pipeData = self.inPipe.recv()
             try:
@@ -52,13 +55,11 @@ class UI:
                     self.outPipe.send(inst)
 
                 if input[0] == 'quit':
-                    
+                    #work on this later
                     self.kill.kill = True
-
 
             except:
                 pass
-
 
             else:
                 pass
