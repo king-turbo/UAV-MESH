@@ -149,7 +149,7 @@ class Client():
 
         def loop():
             while not self.kill.kill:
-                print("are you the culprit?")
+            
                 self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
                 time.sleep(3)
 
@@ -276,7 +276,7 @@ class Client():
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.initConn()
 
-
+        self.closeConnections()
 
     def closeConnections(self):
 

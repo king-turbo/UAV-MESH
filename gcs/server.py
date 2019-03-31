@@ -49,7 +49,7 @@ class Server:
 
     '''
 
-    def __init__(self, HOST, PORT, oneskyAPI, inPipe, outPipe, killer, gcsName, utmUpdate = True, verbose = True):
+    def __init__(self, HOST, PORT, oneskyAPI, inPipe, outPipe, gcsName, utmUpdate = True, verbose = True):
 
         self.gcsName = gcsName
         self.HOST = HOST
@@ -63,15 +63,16 @@ class Server:
         self.ipDict = {}
         #the initMsgFrmSrv is the first message the client will recieve from the server
         self.initMsgFrmSrv = {"mode" : "default", "freq" : 5}
+        self.conns = []
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.HOST, self.PORT))
-        self.utm = oneskyAPI
+        self.utm = oneskyAPI    
         self.utmUpdate = utmUpdate
         self.verbose = verbose
         self.inputPipe = inPipe
         self.outputPipe = outPipe
-        self.kill = killer
+        self.kill = False
 
         if self.utmUpdate:
             utm_thread = threading.Thread(target=self.UTMTelemUpdate)
@@ -145,7 +146,7 @@ class Server:
         '''
         This runs on a separate thread. It updates telemetry to the UTM
         '''
-        while not self.kill.kill:
+        while not self.kill:
 
             for agent in self.agents:
                 try:
@@ -162,7 +163,8 @@ class Server:
         So each clientHandler only handles one client.
         '''
         oPipe = False
-        while not self.kill.kill:
+        while not self.kill:      
+            print("hello")      
             
             #This waits for data with a timeout of 2 seconds
             
@@ -238,7 +240,9 @@ class Server:
             
             oPipe = False
 
-        self.sock.close()   
+        self.sock.close() 
+        self.closeConnections()
+        print("should be closed")  
                   
     def replyMsg(self, conn, msg):
         #sends message to the client
@@ -250,38 +254,46 @@ class Server:
         '''
         First method that is ran. Spawns new threads for each client.
         '''
-        
-        def listening():
-            
-            try:
-                while not self.kill.kill:
+        self.conns = []
+        self.inputPipe.send('')
+        self.sock.listen(5)
 
-                    conn, addr = self.sock.accept()
-                    print(conn,addr)
-                    self.conns.append(conn)
-                    
-                    
-                   # conn.settimeout(1.4)
-                    if addr[0] not in self.ipDict:
-                        threading.Thread(target=self.initializeNode, args=(conn, addr)).start()
-                        # _thread.start_new_thread(self.initializeNode, (conn, addr))
-            except:
-                print("excepted")
-                for c in self.conns:
-                    c.close()
+        threading.Thread(target=self.pipeHandler).start()
+         
+        print("\nStarting Server")
+        try:
+            while not self.kill:
 
-        print("\nStarting Server")       
-               
-        listening()
+                conn, addr = self.sock.accept()
+                
+                self.conns.append(conn)                
+                
+               # conn.settimeout(1.4)
+                if addr[0] not in self.ipDict:
+                    threading.Thread(target=self.initializeNode, args=(conn, addr)).start()
+                    # _thread.start_new_thread(self.initializeNode, (conn, addr))
+        except Exception as e:
+            print(e)
+            # for c in self.conns:
+            #     c.close()
+
         
+    def pipeHandler(self):
+
+        while True:            
             
+            dat = self.outputPipe.recv()            
+            if 'quit' in dat:                
+                self.kill = True
+                self.closeConnections()
+                  
     
     def closeConnections(self):        
-        #not used
+        print("closing connections")
+        self.sock.close()
         for conn in self.conns:
             conn.close()
         
-
 
 def getLocalIP(device=''):
 

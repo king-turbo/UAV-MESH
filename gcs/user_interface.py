@@ -22,12 +22,13 @@ class UI:
 
         while not self.kill.kill:
               
-            self.userInput = input()
+            self.userInput = input()  
+                  
                 
 
     def commandLoop(self):
         pipeData = ''
-        self.outPipe.send(0)
+        self.outPipe.send([0])
 
         while not self.kill.kill:            
 
@@ -35,6 +36,10 @@ class UI:
                 pipeData = self.inPipe.recv()
             try:
                 input = self.userInput.split(".")
+
+                if input[0] == 'quit':
+                    self.outPipe.send('quit')
+                    self.kill.kill = True
 
                 if input[0] == 'agents':
                     for i in pipeData:
@@ -54,9 +59,7 @@ class UI:
                     inst = [input[1], input[2], input[3]]
                     self.outPipe.send(inst)
 
-                if input[0] == 'quit':
-                    #work on this later
-                    self.kill.kill = True
+                
 
             except:
                 pass
@@ -65,6 +68,7 @@ class UI:
                 pass
 
             self.userInput = ''
+        self.outPipe.send('quit')
 
     def dummyfunction(self):
         whatisthisnotworking = 1

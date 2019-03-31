@@ -8,6 +8,10 @@ from gcs.server import *
 from utils.system_killer import Killer
 
 
+def runServer(HOST, PORT, utm, input_parent_conn, output_child_conn, name, utmUpdate, verbose):
+    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, name, utmUpdate, verbose)
+    queenB.listen()
+
 def main():
 
     #store JWT into 'token'
@@ -26,22 +30,18 @@ def main():
     #create api interface with onesky
     utm = OneSkyAPI(token)
 
-
     kill = Killer()
 
     #instantiate the UI with the pipes
     ui = UI(input_child_conn, output_parent_conn, kill)
     #instantiate the server
     
-    
-    queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, kill, "castle", utmUpdate = True, verbose=True, )
-    
-    #start the listening method with pipes
-    listenProc = mp.Process(target= queenB.listen, args=())
-    listenProc.daemon = True
-    listenProc.start()
+    p_server = mp.Process(target= runServer, args=(HOST, PORT, utm, input_parent_conn, output_child_conn,  "castle", True, True))
+    p_server.daemon = True
+    p_server.start()
+
     ui.start()    
-    listenProc.join()    
+    p_server.join()    
     sys.exit(0)
 
 
