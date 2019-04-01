@@ -73,6 +73,8 @@ class Server:
         self.inputPipe = inPipe
         self.outputPipe = outPipe
         self.kill = False
+        self.uiDataLock = threading.Lock()
+        self.uiData = []
 
         if self.utmUpdate:
             utm_thread = threading.Thread(target=self.UTMTelemUpdate)
@@ -162,9 +164,8 @@ class Server:
         the client and back again. Each clientHandler loop is handled on a thread which is spawned from the 'listen' method
         So each clientHandler only handles one client.
         '''
-        oPipe = False
-        while not self.kill:      
-            print("hello")      
+        
+        while not self.kill:                              
             
             #This waits for data with a timeout of 2 seconds
             
@@ -191,37 +192,22 @@ class Server:
                        #This next section of code will send instructions to the vehicle
 
                        #if the incoming data does not ask to close the connection    
-                       if "close connection" not in _data:
-                           #if there is data in the pipe from the user interface
-                           if self.outputPipe.poll():
-                               #read the data
-                               oPipe = self.outputPipe.recv()    
-                           #is this if necessary? TODO: test if this if is necessary
-                           if oPipe:
-                               #The ipDict has the format {ipAddress : nameOfClient}, oPipe[0] should be the name of client
-                               #when a user enters "cinerella.rate.5", "cinderella" is oPipe[0]. if cinerella == the name
-                               #that this clientHandler is working with, then:
-
-                               if oPipe[0] == self.ipDict[addr[0]]:
-                                   #send the remained of the message to the client, in the above example's case: "rate.5"    
+                       
+                       #if there is data in the pipe from the user interface
+                       with self.uiDataLock:                       
+                            
+                            if self.uiData[0] == self.ipDict[addr[0]]:
+                                #send the remained of the message to the client, in the above example's case: "rate.5"                            
+                                self.replyMsg(conn, self.uiData[1:])
+                                self.uiData=[0]
+                            else:
+                                #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
+                                #to a 1?
                                    
-                                   self.replyMsg(conn, oPipe[1:])
-                               else:
-                                   #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
-                                   #to a 1?
-                                   
-                                   self.replyMsg(conn, [0])                                
-                           else:    
-                                   
-                               self.replyMsg(conn,[0])                               
-                       else:
-                           #client requested removal, remove
-                           print("Removed connection at Client's Request")
-                           del self.ipDict[addr[0]]
-                           conn.close()
-                           break
+                                self.replyMsg(conn, [0])                               
+                                             
+                   
                    except Exception as e:
-
                        print(e)
                        pass
                 else:
@@ -238,12 +224,33 @@ class Server:
             
             self.inputPipe.send(self.agents)
             
-            oPipe = False
+            
 
-        self.sock.close() 
+        
         self.closeConnections()
-        print("should be closed")  
-                  
+         
+           
+
+
+    def pipeHandler(self):
+
+        while not self.kill:            
+            
+            dat = self.outputPipe.recv()  
+
+
+            if 'quit' in dat:                
+                self.kill = True
+                self.closeConnections()
+                break 
+
+            else:
+                with self.uiDataLock:
+                    self.uiData = dat
+
+
+
+
     def replyMsg(self, conn, msg):
         #sends message to the client
         conn.sendall(json.dumps(msg).encode("utf-8"))
@@ -278,14 +285,7 @@ class Server:
             pass
 
         
-    def pipeHandler(self):
-
-        while not self.kill:            
-            
-            dat = self.outputPipe.recv()            
-            if 'quit' in dat:                
-                self.kill = True
-                self.closeConnections()
+    
                   
     
     def closeConnections(self):        
