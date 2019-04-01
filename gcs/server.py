@@ -264,23 +264,23 @@ class Server:
         try:
             while not self.kill:
 
+                
                 conn, addr = self.sock.accept()
                 
+                print("whats up buttercup")
                 self.conns.append(conn)                
                 
                # conn.settimeout(1.4)
                 if addr[0] not in self.ipDict:
                     threading.Thread(target=self.initializeNode, args=(conn, addr)).start()
                     # _thread.start_new_thread(self.initializeNode, (conn, addr))
-        except Exception as e:
-            print(e)
-            # for c in self.conns:
-            #     c.close()
+        except:
+            pass
 
         
     def pipeHandler(self):
 
-        while True:            
+        while not self.kill:            
             
             dat = self.outputPipe.recv()            
             if 'quit' in dat:                
@@ -289,7 +289,7 @@ class Server:
                   
     
     def closeConnections(self):        
-        print("closing connections")
+        print("Closing GCS")
         self.sock.close()
         for conn in self.conns:
             conn.close()

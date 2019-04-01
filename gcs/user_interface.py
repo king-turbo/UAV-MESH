@@ -21,8 +21,10 @@ class UI:
     def userInputLoop(self):
 
         while not self.kill.kill:
-              
-            self.userInput = input()  
+            try:  
+                self.userInput = input()  
+            except EOFError:
+                pass
                   
                 
 
