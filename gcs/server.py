@@ -75,6 +75,7 @@ class Server:
         self.kill = False
         self.uiDataLock = threading.Lock()
         self.uiData = []
+        self.agentLock=threading.Lock()
 
         if self.utmUpdate:
             utm_thread = threading.Thread(target=self.UTMTelemUpdate)
@@ -99,13 +100,17 @@ class Server:
 
                 elif "$connect" in _data:
                     #if the connection is new
-                    if _data["name"] not in self.agents:
+                    with self.agentLock:
+                        _agents = self.agents
+
+                    if _data["name"] not in _agents:
                         print("{} has connected at Lat:{}, Lon:{}, Alt:{}.".format(_data["name"],_data["lat"],_data["lon"],_data["alt"]))
                         #store the new connection name in the IP dictionary
                         self.ipDict[addr[0]] = _data["name"]
                         #also store the new connetion's name in the agents dictionary. the key is the name and the value is
                         #the vehicle class object. This allows for easy vehicle look ups
-                        self.agents[_data["name"]] = (VehicleClass(_data["name"], addr[0], _data["type"]))
+                        with self.agentLock:
+                            self.agents[_data["name"]] = (VehicleClass(_data["name"], addr[0], _data["type"]))
 
                         #if we are updated to the UTM
                         if self.utmUpdate:
@@ -113,13 +118,13 @@ class Server:
                             self.createUTMPointFlight(_data["name"],_data["lon"],_data["lat"],_data["alt"])
                     #if the connection's name exists, but the IP addresses are the same, then this is indicative of
                     #two vehicles operating with the same name. The connection is closed.
-                    elif self.agents[_data["name"]].ip != addr[0]:
+                    elif _agents[_data["name"]].ip != addr[0]:
                         print("\n A vehicle attempted to connect with a name already in use")  #TODO: make a fancy exception thing
                         conn.close()
 
                     #if the vehicle's name is already stored and the IP addresses match, this means that
                     #the vehicle lost connection and reconnected
-                    elif self.agents[_data["name"]].ip == addr[0]:
+                    elif _agents[_data["name"]].ip == addr[0]:
                         print("\n{} has reconnected.".format(_data["name"]))
                         self.ipDict[addr[0]] = _data["name"]
                     a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
@@ -141,18 +146,22 @@ class Server:
         This function calls the createPointFlight method from the utm class. It store the GUFI (unique flight identifier)
         to the vehicle object in the agent dictionary
         '''
-        self.agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
-        print("Created GUFI for "+name +" : " + self.agents[name].GUFI)
+        with self.agentLock:
+            _agents = self.agents
+
+        _agents[name].GUFI = self.utm.createPointFlight(name, lon, lat, alt)
+        print("Created GUFI for "+name +" : " + _agents[name].GUFI)
 
     def UTMTelemUpdate(self):
         '''
         This runs on a separate thread. It updates telemetry to the UTM
         '''
         while not self.kill:
-
-            for agent in self.agents:
+            with self.agentLock:
+                _agents = self.agents
+            for agent in _agents:
                 try:
-                    self.utm.updateTelemetry(self.agents[agent].GUFI, self.agents[agent].lon, self.agents[agent].lat, self.agents[agent].alt)
+                    self.utm.updateTelemetry(_agents[agent].GUFI, _agents[agent].lon, _agents[agent].lat, _agents[agent].alt)
                 except:
                     pass
 
@@ -178,34 +187,38 @@ class Server:
 
                 if data:
                    try:
-                       _data = json.loads(data.decode("utf-8"))
+                        _data = json.loads(data.decode("utf-8"))
                        
                             #The incoming data is in the form of a dictionary. The information from the client is
                         #then stored in the vehicle object which is stored in the agent dictionary
+                        with self.agentLock:
 
-                       self.agents[self.ipDict[addr[0]]].lon = _data["lon"]
-                       self.agents[self.ipDict[addr[0]]].lat = _data["lat"]
-                       self.agents[self.ipDict[addr[0]]].alt = _data["alt"]
-                       self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
-                       self.agents[self.ipDict[addr[0]]].mode = _data["mode"]    
+                            self.agents[self.ipDict[addr[0]]].lon = _data["lon"]
+                            self.agents[self.ipDict[addr[0]]].lat = _data["lat"]
+                            self.agents[self.ipDict[addr[0]]].alt = _data["alt"]
+                            self.agents[self.ipDict[addr[0]]].updateRate = _data["updateRate"]
+                            self.agents[self.ipDict[addr[0]]].mode = _data["mode"]    
 
                        #This next section of code will send instructions to the vehicle
 
                        #if the incoming data does not ask to close the connection    
                        
                        #if there is data in the pipe from the user interface
-                       with self.uiDataLock:                       
+                        with self.uiDataLock:
+                            _uiData = self.uiData
+
                             
-                            if self.uiData[0] == self.ipDict[addr[0]]:
-                                #send the remained of the message to the client, in the above example's case: "rate.5"                            
-                                self.replyMsg(conn, self.uiData[1:])
+                        if _uiData[0] == self.ipDict[addr[0]]:
+                            #send the remained of the message to the client, in the above example's case: "rate.5"                            
+                            self.replyMsg(conn, _uiData[1:])
+                            with self.uiDataLock:
                                 self.uiData=[0]
-                            else:
-                                #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
-                                #to a 1?
-                                   
-                                self.replyMsg(conn, [0])                               
-                                             
+                        else:
+                            #This (and the following else!)sends a 0 back to the client to let it know everything is OK! Maybe I should change
+                            #to a 1?
+                               
+                            self.replyMsg(conn, [0])                               
+                                         
                    
                    except Exception as e:
                        print(e)
@@ -222,7 +235,8 @@ class Server:
 
             #This sends the updated agents dictionary back to the user interface TODO: Is there a better way to do this?
             
-            self.inputPipe.send(self.agents)
+            with self.agentLock:
+                self.inputPipe.send(self.agents)
             
             
 
