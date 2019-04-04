@@ -1,6 +1,6 @@
 #!/bin/bash
 sudo modprobe batman-adv
-
+# Credit to EveningStarNM: https://www.reddit.com/r/darknetplan/comments/68s6jp/how_to_configure_batmanadv_on_the_raspberry_pi_3/
 # disable wlan0
 
 sudo ifconfig wlan1 down &
