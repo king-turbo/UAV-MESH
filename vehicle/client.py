@@ -261,17 +261,18 @@ class Client():
                     time.sleep((1 / self.updateRate)  - toc)
                 except:
                     pass
+                
 
             except BrokenPipeError:
                 print("Connection Reset... Reconnecting\n")
-                self.closeConnection()
+                self.sock.close()
                 time.sleep(2.2)
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.initConn()
 
             except ConnectionResetError:
                 print("Connection Reset... Reconnecting\n")
-                self.closeConnection()
+                self.sock.close()
                 time.sleep(2.2)
                 self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.initConn()

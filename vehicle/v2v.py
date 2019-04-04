@@ -17,6 +17,7 @@ class V2V:
         self.HOST = localIP
         self.gcsList = []
         self.nodeList = [[{"fakename":"dummy"},"111.111.111.111"]]
+        self.ipDict = {}
         self.PORT = 65432
         self.name = name
         self.vehicleType = vehicleType
@@ -78,11 +79,9 @@ class V2V:
                         
                         if success:
                                                                 #outgoing
-                            self.uavOutgoingSocketDict[_data["name"]] = [addr[0], sock]
-                            if _data["name"] not in self.nodeList:
-                                self.nodeList.append([_data["name"], addr[0]])
-
-
+                            self.uavOutgoingSocketDict[_data["name"]] = [addr[0], sock]                            
+                            self.ipDict[addr[0]] = _data["name"]
+                                
                                 #this means i will need to remove key-value pair if outgoing sock is lost
                                 #also need to remove name in nodeList if disconnected
 
@@ -107,7 +106,7 @@ class V2V:
         for char in b:
             if char == ')':
                 flag = False
-                if any(_ip in addr for addr in self.nodeList):
+                if any(_ip in addr for addr in self.ipDict):
                     pass
                 elif _ip != self.HOST:
                     newIPs.append(_ip)
@@ -131,14 +130,15 @@ class V2V:
                                        #node name       #ip
                 if "GCS" in neighbor[0]:
                     self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
-                    self.nodeList.append([neighbor[0]["GCS"],neighbor[1]])
+                    self.ipDict[neighbor[1]] = neighbor[0]["GCS"]
                 if "UAV" in neighbor[0]:
                     success, sock = self.connect2UAV(neighbor[1])
                     #connect to the new UAVs
                     #if succesfully connected, then append to nodelist
                     if success:
-                        if neighbor[0]["UAV"] not in self.nodeList:
-                            self.nodeList.append([neighbor[0]["UAV"],neighbor[1]])
+                        if neighbor[0]["UAV"] not in self.ipDict:
+                            self.ipDict[neighbor[1]] = neighbor[0]["UAV"]
+                            
                                                                 #outgoing
                         self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
                     else:
@@ -176,7 +176,16 @@ class V2V:
         #maybe do this multiprocessing?
         for node in self.uavOutgoingSocketDict:
             sock = self.uavOutgoingSocketDict[node][1]
-            sock.sendall(json.dumps(msg).encode("utf-8"))
+            try:
+                sock.sendall(json.dumps(msg).encode("utf-8"))
+            except (BrokenPipeError, ConnectionResetError):
+                sock.close()
+                del self.uavOutgoingSocketDict[node]
+                try:
+                    del self.ipDict[node[0]]
+                except:
+                    pass
+
 
     def closeAllConns(self):
 
@@ -213,6 +222,16 @@ class V2V:
                             print("exception occured in listenToVehicle method")
                             print(e)
                             pass
+
+                else:
+                    print("\n " + name + " has disconnected!")
+                    conn.close()
+                try:
+                    del self.ipDict[ip]
+                except:
+                    pass
+                break
+
             except Exception as e:
                 print(e)
                 print("exception in v2v listen2vehicles")
