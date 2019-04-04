@@ -158,10 +158,11 @@ class Server:
         '''
         while not self.kill:
             with self.agentLock:
-                _agents = self.agents
-            for agent in _agents:
+                _agents = [v for _, v in self.agents.items()]
+
+            for _agent in _agents:
                 try:
-                    self.utm.updateTelemetry(_agents[agent].GUFI, _agents[agent].lon, _agents[agent].lat, _agents[agent].alt)
+                    self.utm.updateTelemetry(_agent.GUFI, _agent.lon, _agent.lat, _agent.alt)
                 except:
                     pass
 

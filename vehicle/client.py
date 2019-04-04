@@ -151,7 +151,7 @@ class Client():
             while not self.kill.kill:
             
                 self.v2vComms.msgAllUavs(self.lat, self.lon, self.alt, self.heading)
-                time.sleep(3)
+                time.sleep(2)
 
 
         threading.Thread(target=loop).start()
