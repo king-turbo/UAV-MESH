@@ -193,7 +193,7 @@ class Server:
                 else:
                     _empty_msg=[]
                 if len(_empty_msg) >= 100:
-                    print("\n " + self.ipDict[addr[0]] + " has disconnected!")
+                    print("\n" + self.ipDict[addr[0]] + " has disconnected!")
                     conn.close()
                     del self.ipDict[addr[0]]
                     break
@@ -241,7 +241,7 @@ class Server:
 
             else:
                 #if the connection has timed out, then remove it from the ipDict. #TODO: make sure this is what we want
-                print("\n " + self.ipDict[addr[0]] + " has disconnected!")
+                print("\n" + self.ipDict[addr[0]] + " has disconnected!")
                 conn.close()
                 del self.ipDict[addr[0]]
                 break

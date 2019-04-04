@@ -122,8 +122,7 @@ class V2V:
 
         #multiprocessing to probe all the ips. makes it about 4x as fast
         p = Pool(5)
-        newNeighbors = p.map(probe, newIPs)
-
+        newNeighbors = p.map(probe, newIPs)     
 
         for neighbor in newNeighbors:
             if neighbor != None:
@@ -132,7 +131,7 @@ class V2V:
                     self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
                     self.ipDict[neighbor[1]] = neighbor[0]["GCS"]
                 if "UAV" in neighbor[0]:
-                    success, sock = self.connect2UAV(neighbor[1])
+                    success, sock = self.connect2UAV(neighbor[1])                    
                     #connect to the new UAVs
                     #if succesfully connected, then append to nodelist
                     if success:
@@ -140,7 +139,7 @@ class V2V:
                             self.ipDict[neighbor[1]] = neighbor[0]["UAV"]
                             
                                                                 #outgoing
-                        self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]
+                        self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]                        
                     else:
                         sock.close()
         p.terminate()
@@ -181,7 +180,7 @@ class V2V:
             try:
                 u[1][1].sendall(json.dumps(msg).encode("utf-8"))
             except (BrokenPipeError, ConnectionResetError):
-                print("Outgoing connection to " + u[0] + "closed.")
+                print("Outgoing connection to " + u[0] + " closed.")
                 u[1][1].close()
                 self.uavOutgoingSocketDict[u[0]][1].close()
                 del self.uavOutgoingSocketDict[u[0]]
@@ -216,9 +215,6 @@ class V2V:
                 self.uavOutgoingSocketDict[node].close()
             except:
                 pass
-        
-
-
         print("Closed all v2v Conns")
 
     def listenToVehicle(self,conn, name, ip, vehicleType):
@@ -232,15 +228,13 @@ class V2V:
                 r, _, _ = select.select([conn], [], [], 6)
                 # if there is data
                 if r:
-                    data = conn.recv(1024)
-                    print(data)
-
+                    data = conn.recv(1024)             
                     if data == b'':
                         _empty_msg.append(1)
                     else:
                         _empty_msg=[]
                     if len(_empty_msg) >= 100:
-                        print("\n " + name + " has disconnected!")
+                        print("\n" + name + " has disconnected!")
                         conn.close()
                         del self.ipDict[ip]
                         break
@@ -259,7 +253,7 @@ class V2V:
                             pass
 
                 else:
-                    print("\n " + name + " has disconnected!")
+                    print("\n" + name + " has disconnected!")
                     conn.close()
                     try:
                         del self.ipDict[ip]
@@ -294,4 +288,4 @@ def probe(ip):
         except:
             pass
     s.close()
-    print("ended")
+    
