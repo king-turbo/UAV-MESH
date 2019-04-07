@@ -183,22 +183,17 @@ class Client():
         if self.gcsList:
             print("List of GCSs:")
             print(self.gcsList)
-            if not self.gcsList:
-                #TODO: need to try to connect again if gcslist is empty
-                print("gcs list empty")
-            #TODO: need to make the user select which GCS from the LED display
-            else:
-                self.HOST = self.gcsList[0][1]
+            self.HOST = self.gcsList[0][1]
         else:
             _unsuccessfulCount += 1
             if _unsuccessfulCount >= 10:
                 print("\nTrying to find GCS again...")
                 time.sleep(3)
-                self.v2vComms.findNodes()            
+                self.findGCS()            
             else:
                 print("\nTrying to find GCS again...")
                 time.sleep(1)
-                self.v2vComms.findNodes()
+                self.findGCS()
 
 
 

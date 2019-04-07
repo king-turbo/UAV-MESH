@@ -37,7 +37,7 @@ def main(argv):
         print("Using hostname as UAV name!")
 
     kill = Killer()
-    print(display)
+ 
     node = Client("MULTI_ROTOR", name, kill, batman, display)
     node.initVehicle()
     node.initV2V()

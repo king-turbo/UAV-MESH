@@ -123,30 +123,24 @@ class V2V:
 
     def batmanPing(self):
 
+        
         p = Pool(5)
-        a = p.map(ping_network, range(255))
+        probed = p.map(ping_ip, range(255))
         _ips = []
-        for b in a:
-            if b != None and b not in self.ipDict:
-                h.append(b)
-        p.terminate()
-        p.join()
+        for add in probed:
+            if add != 0:
+                _ips.append(add)
         return _ips
         
         
-
-    def findIpsWithBatARP(self):
-        pass
-
     def findNodes(self):
+        
+
+        # will need to change if nmap doesnt work with silvus
         
         if not self.batman:
             newIPs = self.findIpsWithNmap()
         elif self.batman:
-
-            #ping network
-            #find ips in arp table
-            #loop if nothing
             newIPs = self.batmanPing()
 
 
@@ -314,9 +308,11 @@ def probe(ip):
     
 def ping_network(i):
     
-    try:
-        ip = "169.254.143."+str(i)
-        subprocess.check_output(["fping", "-q", "-t", "50", "-c", "1", "-a", ip])
+    ip = "169.254.143."+str(i)
+    proc = subprocess.Popen(["fping", "-q", "-t", "50", "-c", "1", "-a", ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _out, _err = proc.communicate()
+    code = proc.returncode
+    if code == 0:
         return ip
-    except:
-        pass
+    else:
+        return 0
