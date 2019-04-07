@@ -127,7 +127,7 @@ class Server:
                     elif _agents[_data["name"]].ip == addr[0]:
                         print("\n{} has reconnected.".format(_data["name"]))
                         self.ipDict[addr[0]] = _data["name"]
-                    a = json.dumps({"mode" : "default", "freq" : 5}).encode("utf-8")
+                    a = json.dumps({"mode" : "default", "freq" : 5, "ips" : [ip for ip in self.ipDict]}).encode("utf-8")
                     conn.sendall(a)
                     self.clientHandler(conn, addr) #TODO: check for GUFI, remake if needed
                 else:

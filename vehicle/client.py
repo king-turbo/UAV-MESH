@@ -91,6 +91,8 @@ class Client():
 
         #TODO: make it so it can switch between eth0, bat0, wlan0
         self.ethernetIP = self.peripherals[2]
+        self.batmanIP = self.peripherals[3]
+        self.wlan0 = self.peripherals[4]
 
         if self.allowDisplay:
 
@@ -141,7 +143,11 @@ class Client():
 
 
     def initV2V(self):
-        self.v2vComms = V2V(self.ethernetIP, self.name, self.vehicleType, self.batman)
+        if self.batman:
+            ip = self.batmanIP
+        else:
+            ip = self.ethernetIP
+        self.v2vComms = V2V(ip, self.name, self.vehicleType, self.batman)
         self.v2vComms.initListenSocket()
         self.findGCS()
         self.neighborHandler()
@@ -223,6 +229,9 @@ class Client():
             #change mode to what the server requests
             #change mode to what the server requests
             self.mode = _data["mode"]
+            ips = _data["ips"]
+            for ip in ips:
+                self.v2vComms.knownUnconnectedIPs.append(ip)
             #if the mode is in default
             if _data["mode"] == "default":
                 #then send data
@@ -242,6 +251,7 @@ class Client():
 
         while not self.kill.kill:
             try:
+                print(self.v2vComms.knownUnconnectedIPs)
                 #We want to send the data at precise intervals, so we'll have the loop sleep at time = 1/updatrate - looptime
                 tic = time.time()
                 #get updates from the flight controller

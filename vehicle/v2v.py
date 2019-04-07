@@ -30,6 +30,7 @@ class V2V:
         self.uavs = {}
         self.kill = False
         self.batman = batman
+        self.knownUnconnectedIPs = []
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -133,6 +134,27 @@ class V2V:
         return _ips
         
         
+    def willYouBeMyNeighbor(self, newNeighbors):
+            for neighbor in newNeighbors:
+                if neighbor != None:
+                                           #node name       #ip
+                    if "GCS" in neighbor[0]:
+                        self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
+                        self.ipDict[neighbor[1]] = neighbor[0]["GCS"]
+                    if "UAV" in neighbor[0]:
+                        success, sock = self.connect2UAV(neighbor[1])                    
+                        #connect to the new UAVs
+                        #if succesfully connected, then append to nodelist
+                        if success:
+                            if neighbor[0]["UAV"] not in self.ipDict:
+                                self.ipDict[neighbor[1]] = neighbor[0]["UAV"]
+                                
+                                                                    #outgoing
+                            self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]                        
+                        else:
+                            sock.close()
+
+
     def findNodes(self):
         
 
@@ -142,32 +164,15 @@ class V2V:
             newIPs = self.findIpsWithNmap()
         elif self.batman:
             newIPs = self.batmanPing()
-
-
-        # make this a different method
-        
+            
         p = Pool(5)
-        newNeighbors = p.map(probe, newIPs)     
-
-        for neighbor in newNeighbors:
-            if neighbor != None:
-                                       #node name       #ip
-                if "GCS" in neighbor[0]:
-                    self.gcsList.append([neighbor[0]["GCS"],neighbor[1]])
-                    self.ipDict[neighbor[1]] = neighbor[0]["GCS"]
-                if "UAV" in neighbor[0]:
-                    success, sock = self.connect2UAV(neighbor[1])                    
-                    #connect to the new UAVs
-                    #if succesfully connected, then append to nodelist
-                    if success:
-                        if neighbor[0]["UAV"] not in self.ipDict:
-                            self.ipDict[neighbor[1]] = neighbor[0]["UAV"]
-                            
-                                                                #outgoing
-                        self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]                        
-                    else:
-                        sock.close()
-
+        newNeighbors = p.map(probe, newIPs)
+        self.willYouBeMyNeighbor(newNeighbors)   
+        
+        if self.knownUnconnectedIPs:
+            p = Pool(5)    
+            newNeighbors = p.map(probe, self.knownUnconnectedIPs)
+            self.willYouBeMyNeighbor(newNeighbors)
         p.terminate()
         p.join()
 
@@ -180,6 +185,10 @@ class V2V:
         if r:
             data = json.loads(sock.recv(1024).decode("utf-8"))
             if "$success" in data:
+                try:
+                    self.knownUnconnectedIPs.remove(ip)
+                except:
+                    pass
                 return True, sock
             else:
                 sock.close()
@@ -252,6 +261,7 @@ class V2V:
                         print("\n" + name + " has disconnected!")
                         conn.close()
                         del self.ipDict[ip]
+                        self.knownUnconnectedIPs.append(ip)
                         break
 
                     if data:
@@ -268,6 +278,7 @@ class V2V:
                             pass
 
                 else:
+                    self.knownUnconnectedIPs.append(ip)
                     print("\n" + name + " has disconnected!")
                     conn.close()
                     try:
