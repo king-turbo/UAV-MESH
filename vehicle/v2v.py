@@ -24,13 +24,14 @@ class V2V:
         self.REQUEST_PROBE = {"$probe" : "UAV"}
         self.PROBE_REPLY = {"UAV" : name}
         self.initConnToUav = {"$connect" : 1, "type": vehicleType, "name" : name}
-
+        self.ip = localIP
         self.uavOutgoingSocketDict = {}
         self.listeningSockets = []
         self.uavs = {}
         self.kill = False
         self.batman = batman
         self.knownUnconnectedIPs = []
+        self.ipDict[localIP] = "self"
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -123,8 +124,7 @@ class V2V:
         return newIPs
 
     def batmanPing(self):
-
-        
+       
         p = Pool(5)
         probed = p.map(ping_ip, range(255))
         _ips = []
@@ -164,7 +164,7 @@ class V2V:
             newIPs = self.findIpsWithNmap()
         elif self.batman:
             newIPs = self.batmanPing()
-            
+
         p = Pool(5)
         newNeighbors = p.map(probe, newIPs)
         self.willYouBeMyNeighbor(newNeighbors)   
@@ -173,8 +173,12 @@ class V2V:
             p = Pool(5)    
             newNeighbors = p.map(probe, self.knownUnconnectedIPs)
             self.willYouBeMyNeighbor(newNeighbors)
+        
         p.terminate()
         p.join()
+        
+        print("end of probeds:")
+        print(self.knownUnconnectedIPs)
 
     def connect2UAV(self,ip):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -219,6 +223,8 @@ class V2V:
                 u[1][1].close()
                 self.uavOutgoingSocketDict[u[0]][1].close()
                 del self.uavOutgoingSocketDict[u[0]]
+                if u[1] not in self.knownUnconnectedIPs:
+                    self.knownUnconnectedIPs.append(u[1])
                 try:
                     del self.ipDict[u[1][0]]
                 except:
@@ -261,7 +267,8 @@ class V2V:
                         print("\n" + name + " has disconnected!")
                         conn.close()
                         del self.ipDict[ip]
-                        self.knownUnconnectedIPs.append(ip)
+                        if ip not in self.knownUnconnectedIPs:
+                            self.knownUnconnectedIPs.append(ip)
                         break
 
                     if data:
@@ -278,7 +285,8 @@ class V2V:
                             pass
 
                 else:
-                    self.knownUnconnectedIPs.append(ip)
+                    if ip not in self.knownUnconnectedIPs:
+                            self.knownUnconnectedIPs.append(ip)
                     print("\n" + name + " has disconnected!")
                     conn.close()
                     try:
