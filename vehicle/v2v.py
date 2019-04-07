@@ -137,7 +137,7 @@ class V2V:
         
 
         # will need to change if nmap doesnt work with silvus
-        
+
         if not self.batman:
             newIPs = self.findIpsWithNmap()
         elif self.batman:
@@ -306,7 +306,7 @@ def probe(ip):
             pass
     s.close()
     
-def ping_network(i):
+def ping_ip(i):
     
     ip = "169.254.143."+str(i)
     proc = subprocess.Popen(["fping", "-q", "-t", "50", "-c", "1", "-a", ip], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
