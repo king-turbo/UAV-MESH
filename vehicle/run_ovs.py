@@ -11,8 +11,9 @@ from utils.system_killer import Killer
 def main(argv):
 
     display = True
+    batman = False
     try:
-        opts, args = getopt.getopt(argv, "hn:d", ["help","name=","disableDisplay"])
+        opts, args = getopt.getopt(argv, "bhn:d", ["batman","help","name=","disableDisplay"])
 
     except Exception as e:
         print("-n <name> -d disables LED output")
@@ -29,13 +30,15 @@ def main(argv):
         if opt in ('-d', "--disableDisplay"):
             display = False
             print("LED display is disabled")
+        if opt in ('-b', "--batman"):
+            batman=True
 
     if name == None:
         print("Using hostname as UAV name!")
 
     kill = Killer()
-
-    node = Client("MULTI_ROTOR", name, kill, display)
+    print(display)
+    node = Client("MULTI_ROTOR", name, kill, batman, display)
     node.initVehicle()
     node.initV2V()
     node.initConn()

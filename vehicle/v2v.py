@@ -12,7 +12,7 @@ import sys
 
 class V2V:
 
-    def __init__(self, localIP, name, vehicleType):
+    def __init__(self, localIP, name, vehicleType, batman):
 
         self.HOST = localIP
         self.gcsList = []
@@ -29,6 +29,7 @@ class V2V:
         self.listeningSockets = []
         self.uavs = {}
         self.kill = False
+        self.batman = batman
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -97,7 +98,7 @@ class V2V:
     def probeReply(self):
         return json.dumps({"UAV" : self.name}).encode("utf-8")
 
-    def findNodes(self):
+    def findIpsWithNmap(self):
         newIPs = []
         a = ["nmap", "-sL", "192.168.254.*"]
         b = subprocess.check_output(a).decode("utf-8").strip()
@@ -118,9 +119,39 @@ class V2V:
         #gets rid of "www.nmap.com" and "0 hosts up"
         del newIPs[0]
         del newIPs[-1]
+        return newIPs
+
+    def batmanPing(self):
+
+        p = Pool(5)
+        a = p.map(ping_network, range(255))
+        _ips = []
+        for b in a:
+            if b != None and b not in self.ipDict:
+                h.append(b)
+        p.terminate()
+        p.join()
+        return _ips
+        
+        
+
+    def findIpsWithBatARP(self):
+        pass
+
+    def findNodes(self):
+        
+        if not self.batman:
+            newIPs = self.findIpsWithNmap()
+        elif self.batman:
+
+            #ping network
+            #find ips in arp table
+            #loop if nothing
+            newIPs = self.batmanPing()
 
 
-        #multiprocessing to probe all the ips. makes it about 4x as fast
+        # make this a different method
+        
         p = Pool(5)
         newNeighbors = p.map(probe, newIPs)     
 
@@ -142,6 +173,7 @@ class V2V:
                         self.uavOutgoingSocketDict[neighbor[0]["UAV"]] = [neighbor[1], sock]                        
                     else:
                         sock.close()
+
         p.terminate()
         p.join()
 
@@ -189,18 +221,7 @@ class V2V:
                 except:
                     pass
 
-        # for node in self.uavOutgoingSocketDict:
-        #     sock = self.uavOutgoingSocketDict[node][1]
-        #     try:
-        #         sock.sendall(json.dumps(msg).encode("utf-8"))
-        #     except (BrokenPipeError, ConnectionResetError):
-        #         sock.close()
-        #         del self.uavOutgoingSocketDict[node]
-        #         try:
-        #             del self.ipDict[node[0]]
-        #         except:
-        #             pass
-
+        
 
     def closeAllConns(self):
 
@@ -220,7 +241,7 @@ class V2V:
     def listenToVehicle(self,conn, name, ip, vehicleType):
 
         self.uavs[name] = vc(name, ip, vehicleType)
-        _empty_msg=[]
+        _empty_msg=0
         while not self.kill:
 
             try:
@@ -230,10 +251,10 @@ class V2V:
                 if r:
                     data = conn.recv(1024)             
                     if data == b'':
-                        _empty_msg.append(1)
+                        _empty_msg += 1
                     else:
-                        _empty_msg=[]
-                    if len(_empty_msg) >= 100:
+                        _empty_msg = 0
+                    if _empty_msg >= 100:
                         print("\n" + name + " has disconnected!")
                         conn.close()
                         del self.ipDict[ip]
@@ -268,7 +289,9 @@ class V2V:
                 break
         conn.close()
 
-
+################################################
+##    Functions for multiprocessing below     ##
+################################################
 
 def probe(ip):
 
@@ -289,3 +312,11 @@ def probe(ip):
             pass
     s.close()
     
+def ping_network(i):
+    
+    try:
+        ip = "169.254.143."+str(i)
+        subprocess.check_output(["fping", "-q", "-t", "50", "-c", "1", "-a", ip])
+        return ip
+    except:
+        pass

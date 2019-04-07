@@ -175,7 +175,7 @@ class Server:
         the client and back again. Each clientHandler loop is handled on a thread which is spawned from the 'listen' method
         So each clientHandler only handles one client.
         '''
-        _empty_msg=[]
+        _empty_msg=0
         while not self.kill:                              
             
             #This waits for data with a timeout of 2 seconds
@@ -189,10 +189,10 @@ class Server:
                 
 
                 if data == b'':
-                    _empty_msg.append(1)
+                    _empty_msg += 1
                 else:
-                    _empty_msg=[]
-                if len(_empty_msg) >= 100:
+                    _empty_msg=0
+                if _empty_msg >= 100:
                     print("\n" + self.ipDict[addr[0]] + " has disconnected!")
                     conn.close()
                     del self.ipDict[addr[0]]

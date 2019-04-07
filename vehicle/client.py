@@ -56,7 +56,7 @@ class Client():
     
     '''
 
-    def __init__(self, vehicleType, name, kill, allowLED = True):
+    def __init__(self, vehicleType, name, kill, batman, allowLED = True):
 
         self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -68,7 +68,7 @@ class Client():
         self.heading= 0
         self.kill = kill
         self.ui = False
-
+        self.batman = batman
         if name == None:
             self.name = socket.gethostname()
         else:
@@ -93,6 +93,7 @@ class Client():
         self.ethernetIP = self.peripherals[2]
 
         if self.allowDisplay:
+
             self.ui = led_display.User2VehicleInterface(0x3C, 0, self.ethernetIP,0)  # TODO: add bat0 and wlan0
             self.ui.loadFlag = True                                                 # TODO: Need better iic thing
             self.ui.displayMode = "connecting2FC"
@@ -140,7 +141,7 @@ class Client():
 
 
     def initV2V(self):
-        self.v2vComms = V2V(self.ethernetIP, self.name, self.vehicleType)
+        self.v2vComms = V2V(self.ethernetIP, self.name, self.vehicleType, self.batman)
         self.v2vComms.initListenSocket()
         self.findGCS()
         self.neighborHandler()
@@ -175,17 +176,31 @@ class Client():
                          "alt": self.alt}
 
     def findGCS(self):
+        _unsuccessfulCount = 0
         self.v2vComms.findNodes()
         print("Finding GCS")
         self.gcsList = self.v2vComms.returnGCS()
-        print("List of GCSs:")
-        print(self.gcsList)
-        if not self.gcsList:
-            #TODO: need to try to connect again if gcslist is empty
-            print("gcs list empty")
-        #TODO: need to make the user select which GCS from the LED display
+        if self.gcsList:
+            print("List of GCSs:")
+            print(self.gcsList)
+            if not self.gcsList:
+                #TODO: need to try to connect again if gcslist is empty
+                print("gcs list empty")
+            #TODO: need to make the user select which GCS from the LED display
+            else:
+                self.HOST = self.gcsList[0][1]
         else:
-            self.HOST = self.gcsList[0][1]
+            _unsuccessfulCount += 1
+            if _unsuccessfulCount >= 10:
+                print("\nTrying to find GCS again...")
+                time.sleep(3)
+                self.v2vComms.findNodes()            
+            else:
+                print("\nTrying to find GCS again...")
+                time.sleep(1)
+                self.v2vComms.findNodes()
+
+
 
 
     def initConn(self):
@@ -195,6 +210,9 @@ class Client():
         '''
         #connect to the server
 
+        #############################################################################
+        #TODO: do the same catch for b'' in inc data to reset server proc
+        #######################################################################3
         try:
             self.sock.connect((self.HOST, 65432))
             #sent the init message
