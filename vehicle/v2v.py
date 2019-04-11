@@ -31,7 +31,7 @@ class V2V:
         self.kill = False        
         self.knownUnconnectedIPs = []
         self.ipDict[localIP] = "self"
-        self.networkType
+        self.networkType = networkType
         # self.initListenSocket()
 
     def initListenSocket(self):
