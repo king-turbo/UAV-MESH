@@ -161,7 +161,7 @@ class V2V:
 
         # will need to change if nmap doesnt work with silvus
 
-        if self.networkType == "ethernet"
+        if self.networkType == "ethernet":
             newIPs = self.findIpsWithNmap()
         elif self.networkType == "batman" or self.networkType == "silvus":
             newIPs = self.batmanPing()
