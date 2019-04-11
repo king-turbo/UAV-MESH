@@ -33,7 +33,7 @@ def main(argv):
     
     opts, args = getopt.getopt(argv, "ebw", ["ethernet", "batman", "wifi"])
     
-    
+    HOST = ""
     
     for opt, arg in opts:
         if opt == "-e":
@@ -42,7 +42,10 @@ def main(argv):
             HOST = batmanIP
         if opt == "-w":
             HOST = wlan0
-
+    
+    if HOST == "":
+        print("Please select ethernet, batman, or wifi with -e, -b, -w")
+        sys.exit(0)
 
     PORT = 65432
 

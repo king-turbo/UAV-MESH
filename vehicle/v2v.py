@@ -12,7 +12,7 @@ import sys
 
 class V2V:
 
-    def __init__(self, localIP, name, vehicleType, batman):
+    def __init__(self, localIP, name, vehicleType, networkType):
 
         self.HOST = localIP
         self.gcsList = []
@@ -29,9 +29,10 @@ class V2V:
         self.listeningSockets = []
         self.uavs = {}
         self.kill = False
-        self.batman = batman
+        self.batman = fping
         self.knownUnconnectedIPs = []
         self.ipDict[localIP] = "self"
+        self.networkType
         # self.initListenSocket()
 
     def initListenSocket(self):
@@ -160,9 +161,9 @@ class V2V:
 
         # will need to change if nmap doesnt work with silvus
 
-        if not self.batman:
+        if self.networkType == "ethernet"
             newIPs = self.findIpsWithNmap()
-        elif self.batman:
+        elif self.networkType == "batman" or self.networkType == "silvus":
             newIPs = self.batmanPing()
 
         p = Pool(5)
