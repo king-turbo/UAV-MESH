@@ -1,17 +1,30 @@
+#!/usr/bin/env python3
+import sys, getopt
 import subprocess
 from multiprocessing import Pool
 import time
+import os
+def setup(argv):
 
-def setup(num):
-
+	opts, args = getopt.getopt(argv, "n:", ["number"])
+	print(opts,args)
+	num = 0
+	for opt, arg in opts:
+		if opt == "-n":
+			num = arg
+			# print(opt, arg)
+	if num == 0:
+		print("Please include a unique vehicle number between 1-254")
+		return 0
+	print(num)
 	ip = "169.254.143."+str(num)+"/16" 
-	subprocess.call(['./batmansetup.sh'])
-	time.sleep(1)
-	subprocess.call(["sudo", "ifconfig", "bat0", "down"])
-	time.sleep(.5)
-	subprocess.call(["sudo", "ip", "addr", "add", ip, "dev", "bat0"])
-	time.sleep(.5)
-	subprocess.call(["sudo", "ifconfig", "bat0", "up"])
+	subprocess.call(['./batmansetup.sh', ip])
+	# time.sleep(1)
+	# subprocess.call(["sudo", "ifconfig", "bat0", "down"])
+	# time.sleep(.5)
+	# subprocess.call(["sudo", "ip", "addr", "add", ip, "dev", "bat0"])
+	# time.sleep(.5)
+	# subprocess.call(["sudo", "ifconfig", "bat0", "up"])
 
 
 # def ping_network(i):
@@ -40,7 +53,4 @@ def setup(num):
 
 if __name__ == '__main__':
 
-	
-	setup(71)
-	
-
+	setup(sys.argv[1:])
