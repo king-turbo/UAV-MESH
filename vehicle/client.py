@@ -98,7 +98,7 @@ class Client():
             self.ip = self.batmanIP
         elif self.networkType =="silvus":
             self.ip = self.ethernetIP
-        elif self.networkType == "wifi"
+        elif self.networkType == "wifi":
             self.ip = self.wlan0
         elif self.networkType == "ethernet":
             self.networkType = ethernetIP
