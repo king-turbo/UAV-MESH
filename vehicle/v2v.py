@@ -28,8 +28,7 @@ class V2V:
         self.uavOutgoingSocketDict = {}
         self.listeningSockets = []
         self.uavs = {}
-        self.kill = False
-        self.batman = fping
+        self.kill = False        
         self.knownUnconnectedIPs = []
         self.ipDict[localIP] = "self"
         self.networkType
