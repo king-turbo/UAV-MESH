@@ -56,7 +56,7 @@ class Client():
     
     '''
 
-    def __init__(self, vehicleType, name, kill, batman, allowLED = True):
+    def __init__(self, vehicleType, name, kill, networkType, allowLED = True):
 
         self.allowDisplay = allowLED
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -68,7 +68,7 @@ class Client():
         self.heading= 0
         self.kill = kill
         self.ui = False
-        self.batman = batman
+        self.networkType= networkType
         if name == None:
             self.name = socket.gethostname()
         else:
@@ -94,10 +94,14 @@ class Client():
         self.batmanIP = self.peripherals[3]
         self.wlan0 = self.peripherals[4]
 
-        if self.batman:
+        if self.networkType == "batman":
             self.ip = self.batmanIP
-        else:
+        elif self.networkType =="silvus":
             self.ip = self.ethernetIP
+        elif self.networkType == "wifi"
+            self.ip = self.wlan0
+        elif self.networkType == "ethernet":
+            self.networkType = ethernetIP
 
         if self.allowDisplay:
 
@@ -149,7 +153,7 @@ class Client():
 
     def initV2V(self):
         
-        self.v2vComms = V2V(self.ip, self.name, self.vehicleType, self.batman)
+        self.v2vComms = V2V(self.ip, self.name, self.vehicleType, self.networkType)
         self.v2vComms.initListenSocket()
         self.findGCS()
         self.neighborHandler()
