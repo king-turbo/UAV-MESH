@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, getopt
 import os
 import signal
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))

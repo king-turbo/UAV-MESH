@@ -12,7 +12,7 @@ def runServer(HOST, PORT, utm, input_parent_conn, output_child_conn, name, utmUp
     queenB = Server(HOST, PORT, utm, input_parent_conn, output_child_conn, name, utmUpdate, verbose)
     queenB.listen()
 
-def main():
+def main(argv):
 
     #store JWT into 'token'
     with open("mwalton.token", "r") as toke:
@@ -20,7 +20,30 @@ def main():
 
     #Get the IP and Port of server from the localIP py file
 
-    HOST = "192.168.254.11"
+    
+
+
+
+    subprocess.call(['../utils/./sysinfo.sh'])
+    time.sleep(.00001)
+    peripherals = [line.rstrip('\n') for line in open('sysdisc.txt')]   
+    ethernetIP = peripherals[2]
+    batmanIP = peripherals[3]
+    wlan0 = peripherals[4]
+    
+    opts, args = getopt.getopt(argv, "ebw", ["ethernet", "batman", "wifi"])
+    
+    
+    
+    for opt, arg in opts:
+        if opt == "-e":
+            HOST = ethernetIP
+        if opt == "-b":
+            HOST = batmanIP
+        if opt == "-w":
+            HOST = wlan0
+
+
     PORT = 65432
 
     #These two pipes send data from the UI to the clientHandler server loop
@@ -47,7 +70,7 @@ def main():
 
 if __name__=="__main__":
 
-    main()
+    main(sys.argv[1:])
 
     
     
