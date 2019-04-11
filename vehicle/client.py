@@ -101,7 +101,7 @@ class Client():
         elif self.networkType == "wifi":
             self.ip = self.wlan0
         elif self.networkType == "ethernet":
-            self.networkType = self.ethernetIP
+            self.ip = self.ethernetIP
 
         if self.allowDisplay:
 
