@@ -15,6 +15,6 @@ sleep 1s
 sudo ifconfig wlan1 up &
 sudo batctl if add wlan1 &
 sleep 1s
+sudo ifconfig bat0 $IP_ADDRESS &
+sleep 1s
 sudo ifconfig bat0 up &
-sleep 5s
-sudo ifconfig bat0 $IP_ADDRESS
