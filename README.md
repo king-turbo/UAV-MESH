@@ -1,0 +1,1 @@
+Implemented with TCP. Use the UDP version https://github.com/miketeedub/uav-mesh-udp
